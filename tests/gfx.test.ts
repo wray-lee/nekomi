@@ -13,6 +13,7 @@ import {
   parseGfxFlag,
   selectSpritePose,
 } from '../src/gfx-protocol';
+import { translateMouseForChild } from '../src/input-parser';
 import { renderBand } from '../src/tui-render';
 
 describe('Terminal image protocol & 48x48 integrated catgirl sprites', () => {
@@ -130,8 +131,8 @@ describe('Terminal image protocol & 48x48 integrated catgirl sprites', () => {
     const sixel = new SpriteRenderer('sixel', assetsDir, {});
     expect(sixel.protocol).toBe('sixel');
     const sixelOut = sixel.renderOverlay(termSnap, 80, 25);
-    expect(sixelOut).toContain('\x1bP0;1;0q"1;1;48;48');
-    expect(sixelOut).toContain('\x1bP0;1;0q"1;1;96;96');
+    expect(sixelOut).toContain('\x1bP0;1;0q"1;1;42;42');
+    expect(sixelOut).toContain('\x1bP0;1;0q"1;1;84;84');
 
     // Clawd external holoTerm box & halfblock helper pixels are suppressed in image mode
     const lines = renderBand(termSnap, 80, { omitMainSprite: true });
@@ -147,5 +148,18 @@ describe('Terminal image protocol & 48x48 integrated catgirl sprites', () => {
     eng.typed('k');
     const echoLines = renderBand(eng.snapshot(80), 80, { omitMainSprite: true });
     expect(echoLines.join('')).toContain('k');
+  });
+
+  test('translateMouseForChild translates wheel to PageUp/PageDown when child does not capture mouse', () => {
+    const wheelUp = { kind: 'mouse' as const, raw: '\x1b[<64;20;10M', btn: 64, col: 20, row: 10, release: false };
+    const wheelDown = { kind: 'mouse' as const, raw: '\x1b[<65;20;10M', btn: 65, col: 20, row: 10, release: false };
+    const leftClick = { kind: 'mouse' as const, raw: '\x1b[<0;20;10M', btn: 0, col: 20, row: 10, release: false };
+
+    expect(translateMouseForChild(wheelUp, false)).toBe('\x1b[5~');
+    expect(translateMouseForChild(wheelDown, false)).toBe('\x1b[6~');
+    expect(translateMouseForChild(leftClick, false)).toBeNull();
+
+    expect(translateMouseForChild(wheelUp, true)).toBe(wheelUp.raw);
+    expect(translateMouseForChild(leftClick, true)).toBe(leftClick.raw);
   });
 });

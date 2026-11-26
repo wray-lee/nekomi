@@ -1,4 +1,4 @@
-"""Supersampled 256x256 anime-chibi nekomi catgirl sprite & 24x24 helper kitten generator."""
+"""Supersampled 256x256 super-chibi nekomi catgirl (1.7-head ratio, 128 PNG / 84 Sixel) & 24x24 kittens."""
 
 from __future__ import annotations
 
@@ -19,30 +19,27 @@ FRAMES = [
 ]
 MASTER_SIZE = 256
 PNG_SIZE = 128
-SIXEL_SIZE = 96
+SIXEL_SIZE = 84
 MAX_SIXEL_COLORS = 64
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "assets" / "sprites"
 
-# Refined anime cel-shaded palette for nekomi catgirl design
 COL = {
     "OUT": (58, 42, 107, 255),       # #3a2a6b delicate dark violet-indigo lineart
-    "OUT_S": (86, 66, 146, 220),     # softer inner detail lineart
+    "OUT_S": (88, 68, 148, 225),     # softer inner detail lineart
     "SKIN": (255, 241, 234, 255),    # #fff1ea luminous anime skin
     "SKIN_S": (246, 212, 200, 255),  # #f6d4c8 warm cel shade
-    "BLUSH": (255, 186, 206, 255),   # opaque peach-pink blush blended over skin (no dark terminal bleed)
-    "MOUTH": (176, 98, 126, 255),    # delicate anime mouth line
-    "EAR_O": (122, 144, 255, 255),   # matches periwinkle hair crown seamlessly
-    "EAR_SH": (98, 114, 226, 255),   # soft outer ear shadow
-    "EAR_W": (255, 250, 255, 255),   # fluffy cream-white ear tuft
-    "EAR_P": (236, 168, 218, 255),   # soft pastel rose-lavender ear hollow
-    "H_HI": (208, 226, 255, 210),    # silky anime hair highlight
+    "BLUSH": (255, 186, 206, 255),   # opaque peach-pink blush (no dark bleed)
+    "MOUTH": (176, 98, 126, 255),    # delicate anime mouth
+    "EAR_O": (122, 144, 255, 255),   # matches periwinkle crown seamlessly
+    "EAR_W": (255, 250, 255, 255),   # fluffy cream-white inner ear tuft
+    "EAR_P": (236, 168, 218, 255),   # pastel rose-lavender inner hollow
+    "H_HI": (212, 228, 255, 215),    # silky curved hair highlight
     "WHT": (255, 255, 255, 255),
     "KIM_D": (42, 34, 96, 255),      # dark navy kimono
-    "KIM_M": (70, 58, 152, 255),     # indigo trim/fold
+    "KIM_M": (70, 58, 152, 255),
     "SAS": (138, 92, 236, 255),      # violet obi sash
-    "SAS_L": (188, 148, 255, 255),
     "FRIL": (248, 246, 255, 255),    # white petticoat / cuffs / loose socks
     "FRIL_S": (212, 206, 242, 255),
     "SHOE": (52, 40, 112, 255),
@@ -55,21 +52,21 @@ COL = {
     "BOOK": (88, 66, 168, 255),
     "RUNE_BG": (28, 26, 66, 255),
     "ZZZ": (138, 180, 255, 255),
-    "TEAR": (136, 228, 255, 225),
+    "TEAR": (136, 228, 255, 235),
 }
 
 HAIR_STOPS = [
-    (0.00, (122, 148, 255)),  # periwinkle-sky crown matching 1.webp
-    (0.34, (142, 134, 255)),  # periwinkle mid
-    (0.68, (188, 136, 255)),  # lavender
-    (1.00, (242, 154, 248)),  # pastel pink-lilac curls
+    (0.00, (120, 148, 255)),  # periwinkle-sky crown
+    (0.35, (142, 134, 255)),  # periwinkle mid
+    (0.70, (188, 136, 255)),  # lavender
+    (1.00, (242, 154, 248)),  # pastel pink-lilac wavy tips
 ]
 
 TAIL_STOPS = [
-    (0.00, (118, 176, 255)),  # sky-blue root
-    (0.36, (140, 144, 255)),  # periwinkle
-    (0.72, (192, 136, 255)),  # lavender
-    (1.00, (244, 158, 250)),  # fluffy pink-lilac tip
+    (0.00, (118, 176, 255)),
+    (0.36, (140, 144, 255)),
+    (0.72, (192, 136, 255)),
+    (1.00, (244, 158, 250)),
 ]
 
 
@@ -137,14 +134,13 @@ def paint_gradient_mask(mask: Image.Image, y0: float, y1: float, stops: list[tup
     return grad
 
 
-def draw_closed(d: ImageDraw.ImageDraw, pts: list[tuple[float, float]], fill, outline=COL["OUT"], width: int = 3) -> None:
+def draw_closed(d: ImageDraw.ImageDraw, pts: list[tuple[float, float]], fill, outline=COL["OUT"], width: int = 2) -> None:
     d.polygon(pts, fill=fill)
     if outline and width > 0:
         d.line(pts + [pts[0]], fill=outline, width=width, joint="curve")
 
 
 def draw_star(d: ImageDraw.ImageDraw, cx: float, cy: float, rx: float, ry: float, bright: bool = False) -> None:
-    """Delicate 4-pointed iridescent Gemini star from 1.webp."""
     ix = rx * 0.28
     iy = ry * 0.28
     top = (cx, cy - ry)
@@ -189,24 +185,24 @@ def draw_heart(d: ImageDraw.ImageDraw, cx: float, cy: float, r: float) -> None:
 
 
 def draw_tapered_tail(canvas: Image.Image, frame: str, dy: int) -> None:
-    """Lush plush S-curved gradient cat tail matching 1.webp."""
+    """Lush S-curved fluffy gradient cat tail anchored at lower kimono waist."""
     if frame.startswith("sleep"):
-        spine = [(98, 202), (76, 214), (50, 218), (32, 208), (28, 188), (38, 174)]
-        radii = [11, 14, 16, 16, 14, 10]
+        spine = [(96, 204), (72, 214), (46, 218), (30, 206), (26, 186), (36, 172)]
+        radii = [11, 14, 16, 16, 13, 9]
     elif frame.startswith("oops"):
         sway = 5 if frame == "oops_1" else 0
-        spine = [(92, 184 + dy), (62, 176 + dy), (42, 154 + dy), (34 + sway, 126 + dy), (40 + sway, 98 + dy)]
-        radii = [12, 16, 19, 18, 12]
+        spine = [(92, 192 + dy), (62, 182 + dy), (40, 158 + dy), (34 + sway, 128 + dy), (40 + sway, 100 + dy)]
+        radii = [11, 15, 18, 17, 12]
     elif frame in ("happy_0", "happy_1", "walk_0", "code_0", "code_1", "type_0"):
         lift = -6 if frame in ("happy_1", "code_1") else 0
-        spine = [(94, 184 + dy), (66, 188 + dy), (40, 178 + dy + lift), (28, 152 + dy + lift), (36, 128 + dy + lift)]
-        radii = [11, 15, 17, 16, 10]
+        spine = [(92, 192 + dy), (64, 194 + dy), (38, 184 + dy + lift), (26, 158 + dy + lift), (34, 134 + dy + lift)]
+        radii = [11, 15, 17, 15, 10]
     elif frame in ("idle_1", "walk_1", "type_1", "term_1"):
-        spine = [(94, 186 + dy), (68, 196 + dy), (42, 196 + dy), (26, 176 + dy), (32, 152 + dy)]
-        radii = [11, 15, 17, 16, 10]
+        spine = [(92, 194 + dy), (66, 202 + dy), (40, 202 + dy), (25, 182 + dy), (32, 158 + dy)]
+        radii = [11, 15, 17, 15, 10]
     else:
-        spine = [(94, 186 + dy), (66, 202 + dy), (38, 208 + dy), (24, 188 + dy), (30, 164 + dy)]
-        radii = [11, 15, 17, 16, 10]
+        spine = [(92, 194 + dy), (64, 208 + dy), (38, 212 + dy), (24, 192 + dy), (30, 168 + dy)]
+        radii = [11, 15, 17, 15, 10]
 
     smooth = catmull_rom(spine, closed=False, steps=8)
     mask = Image.new("L", canvas.size, 0)
@@ -239,293 +235,284 @@ def draw_anime_eye(
     iris_stops: list[tuple[float, tuple[int, int, int]]],
     mode: str,
 ) -> None:
-    """Delicate 1.webp anime eye: graceful upper eyelash, luminous iris, NO heavy full-circle black outline."""
+    """Large glossy super-chibi heterochromia eye."""
     d = ImageDraw.Draw(canvas, "RGBA")
     if mode == "happy":
-        arc_pts = catmull_rom([(cx - 12, cy + 5), (cx - 4, cy - 4), (cx + 4, cy - 4), (cx + 12, cy + 5)], closed=False, steps=6)
-        d.line(arc_pts, fill=COL["OUT"], width=4, joint="curve")
+        arc_pts = catmull_rom([(cx - 14, cy + 5), (cx - 5, cy - 5), (cx + 5, cy - 5), (cx + 14, cy + 5)], closed=False, steps=6)
+        d.line(arc_pts, fill=COL["OUT"], width=5, joint="curve")
         return
     if mode == "sleep":
-        arc_pts = catmull_rom([(cx - 12, cy + 2), (cx - 4, cy + 6), (cx + 4, cy + 6), (cx + 12, cy + 2)], closed=False, steps=6)
+        arc_pts = catmull_rom([(cx - 13, cy + 2), (cx - 4, cy + 7), (cx + 4, cy + 7), (cx + 13, cy + 2)], closed=False, steps=6)
         d.line(arc_pts, fill=COL["OUT"], width=3, joint="curve")
         return
 
-    rx, ry = (11.5, 13.0) if mode != "oops" else (12.0, 14.0)
-    # Soft almond sclera
+    rx, ry = (13.0, 14.5) if mode != "oops" else (13.5, 15.5)
     d.ellipse((cx - rx - 3, cy - ry + 2, cx + rx + 3, cy + ry + 1), fill=COL["WHT"])
 
     cy_i = cy + 3 if mode == "read" else cy
     ry_i = ry - 2.5 if mode == "read" else ry
 
-    # Luminous iris gradient clipped cleanly
     mask = Image.new("L", canvas.size, 0)
     ImageDraw.Draw(mask).ellipse((cx - rx, cy_i - ry_i, cx + rx, cy_i + ry_i), fill=255)
     iris_img = paint_gradient_mask(mask, cy_i - ry_i, cy_i + ry_i, iris_stops)
     canvas.alpha_composite(iris_img)
 
     d = ImageDraw.Draw(canvas, "RGBA")
-    # Soft pupil & subtle iris edge tint (no harsh black circle around bottom!)
     if mode == "oops":
-        d.ellipse((cx - 3.2, cy_i - 4.2, cx + 3.2, cy_i + 4.2), fill=COL["OUT"])
+        d.ellipse((cx - 3.5, cy_i - 4.5, cx + 3.5, cy_i + 4.5), fill=COL["OUT"])
     else:
-        d.ellipse((cx - 4.2, cy_i - 5.2, cx + 4.2, cy_i + 5.6), fill=COL["OUT"])
+        d.ellipse((cx - 5.0, cy_i - 6.0, cx + 5.0, cy_i + 6.5), fill=COL["OUT"])
     d.arc((cx - rx, cy_i - ry_i, cx + rx, cy_i + ry_i), 15, 165, fill=COL["OUT_S"], width=1)
 
-    # Graceful arched upper eyelash with delicate outer wing
     lash_y = cy - ry + (4 if mode == "read" else 0)
     lash = catmull_rom(
-        [(cx - rx - 3, lash_y + 7), (cx - 5, lash_y), (cx + 5, lash_y), (cx + rx + 4, lash_y + 6)],
+        [(cx - rx - 4, lash_y + 8), (cx - 6, lash_y), (cx + 6, lash_y), (cx + rx + 5, lash_y + 7)],
         closed=False,
         steps=6,
     )
-    d.line(lash, fill=COL["OUT"], width=4, joint="curve")
-    # Tiny lower lash whisper
-    d.arc((cx - 7, cy + ry - 3, cx + 7, cy + ry + 2), 20, 160, fill=COL["OUT_S"], width=1)
+    d.line(lash, fill=COL["OUT"], width=5, joint="curve")
+    d.arc((cx - 8, cy + ry - 3, cx + 8, cy + ry + 2), 20, 160, fill=COL["OUT_S"], width=1)
 
-    # Crisp double specular highlights
-    d.ellipse((cx - 8, cy_i - 8, cx - 1.5, cy_i - 1.5), fill=COL["WHT"])
-    d.ellipse((cx + 3, cy_i + 4, cx + 6.5, cy_i + 7.5), fill=COL["WHT"])
+    # Crisp double anime catchlights
+    d.ellipse((cx - 9, cy_i - 9, cx - 1.5, cy_i - 1.5), fill=COL["WHT"])
+    d.ellipse((cx + 3.5, cy_i + 4.5, cx + 7.5, cy_i + 8.5), fill=COL["WHT"])
 
 
 def draw_cat_ears(canvas: Image.Image, frame: str, dy: int) -> None:
-    """Wide-based plush curved anime cat ears seamlessly emerging from the hair crown (not antennae!)."""
+    """Wide-based plush cat ears tucked naturally behind the dome hair with jagged white fur tufts."""
     d = ImageDraw.Draw(canvas, "RGBA")
     if frame.startswith("oops"):
-        # Startled flattened wide cat ears with open seamless base
-        l_fill = [(96, 62 + dy), (72, 48 + dy), (48, 52 + dy), (68, 68 + dy), (92, 72 + dy)]
-        l_in = catmull_rom([(88, 62 + dy), (70, 54 + dy), (56, 56 + dy), (72, 66 + dy)], steps=4)
-        r_fill = [(160, 62 + dy), (184, 48 + dy), (208, 52 + dy), (188, 68 + dy), (164, 72 + dy)]
-        r_in = catmull_rom([(168, 62 + dy), (186, 54 + dy), (200, 56 + dy), (184, 66 + dy)], steps=4)
+        l_fill = [(94, 58 + dy), (68, 46 + dy), (44, 52 + dy), (66, 68 + dy), (92, 70 + dy)]
+        l_in = catmull_rom([(86, 58 + dy), (68, 52 + dy), (52, 55 + dy), (70, 65 + dy)], steps=4)
+        r_fill = [(162, 58 + dy), (188, 46 + dy), (212, 52 + dy), (190, 68 + dy), (164, 70 + dy)]
+        r_in = catmull_rom([(170, 58 + dy), (188, 52 + dy), (204, 55 + dy), (186, 65 + dy)], steps=4)
         d.polygon(l_fill, fill=COL["EAR_O"])
-        d.line(catmull_rom([(92, 72 + dy), (68, 68 + dy), (48, 52 + dy), (72, 48 + dy), (96, 58 + dy)], closed=False, steps=5), fill=COL["OUT"], width=3, joint="curve")
+        d.line(catmull_rom([(92, 70 + dy), (66, 68 + dy), (44, 52 + dy), (68, 46 + dy), (94, 56 + dy)], closed=False, steps=5), fill=COL["OUT"], width=3, joint="curve")
         draw_closed(d, l_in, COL["EAR_P"], None, 0)
         d.polygon(r_fill, fill=COL["EAR_O"])
-        d.line(catmull_rom([(160, 58 + dy), (184, 48 + dy), (208, 52 + dy), (188, 68 + dy), (164, 72 + dy)], closed=False, steps=5), fill=COL["OUT"], width=3, joint="curve")
+        d.line(catmull_rom([(162, 56 + dy), (188, 46 + dy), (212, 52 + dy), (190, 68 + dy), (164, 70 + dy)], closed=False, steps=5), fill=COL["OUT"], width=3, joint="curve")
         draw_closed(d, r_in, COL["EAR_P"], None, 0)
         return
 
     ear_dy = dy + (5 if frame.startswith("sleep") else (-2 if frame.startswith(("happy", "code", "term", "type")) else 0))
 
-    # Left plush wide-based cat ear (base width ~38px from x=74..112, tip gently upright at x=80, y=18)
-    l_shape = [(73, 62 + ear_dy), (73, 38 + ear_dy), (80, 17 + ear_dy), (99, 28 + ear_dy), (112, 46 + ear_dy), (94, 58 + ear_dy)]
-    l_edge = catmull_rom([(73, 62 + ear_dy), (73, 38 + ear_dy), (80, 17 + ear_dy), (99, 28 + ear_dy), (112, 46 + ear_dy)], closed=False, steps=5)
-    l_in_w = catmull_rom([(79, 58 + ear_dy), (78, 39 + ear_dy), (83, 25 + ear_dy), (96, 36 + ear_dy), (104, 47 + ear_dy), (91, 52 + ear_dy)], steps=4)
-    l_in_p = catmull_rom([(83, 55 + ear_dy), (83, 42 + ear_dy), (87, 36 + ear_dy), (96, 43 + ear_dy), (94, 53 + ear_dy)], steps=4)
+    # Left plush wide-based cat ear
+    l_shape = [(66, 66 + ear_dy), (68, 38 + ear_dy), (75, 16 + ear_dy), (96, 26 + ear_dy), (112, 44 + ear_dy), (92, 60 + ear_dy)]
+    l_edge = catmull_rom([(66, 66 + ear_dy), (68, 38 + ear_dy), (75, 16 + ear_dy), (96, 26 + ear_dy), (112, 44 + ear_dy)], closed=False, steps=5)
+    l_in_p = catmull_rom([(75, 58 + ear_dy), (75, 38 + ear_dy), (80, 24 + ear_dy), (95, 35 + ear_dy), (104, 46 + ear_dy), (90, 54 + ear_dy)], steps=4)
+    l_fluff = [(73, 56 + ear_dy), (74, 42 + ear_dy), (84, 46 + ear_dy), (86, 38 + ear_dy), (96, 46 + ear_dy), (103, 44 + ear_dy), (95, 56 + ear_dy)]
 
     d.polygon(l_shape, fill=COL["EAR_O"])
     d.line(l_edge, fill=COL["OUT"], width=3, joint="curve")
-    draw_closed(d, l_in_w, COL["EAR_W"], None, 0)
-    # Fluffy white ear tuft fur overlapping inner edge (just like 1.webp!)
-    d.polygon([(94, 46 + ear_dy), (105, 42 + ear_dy), (98, 52 + ear_dy)], fill=COL["EAR_W"])
     draw_closed(d, l_in_p, COL["EAR_P"], None, 0)
+    d.polygon(l_fluff, fill=COL["EAR_W"])
 
-    # Right plush wide-based cat ear (gentle outer-tip bend on idle_1)
+    # Right plush wide-based cat ear (tips on idle_1 blink twitch)
     if frame == "idle_1":
-        r_shape = [(144, 46 + ear_dy), (166, 32 + ear_dy), (192, 31 + ear_dy), (186, 52 + ear_dy), (179, 64 + ear_dy), (160, 56 + ear_dy)]
-        r_edge = catmull_rom([(144, 46 + ear_dy), (166, 32 + ear_dy), (192, 31 + ear_dy), (186, 52 + ear_dy), (179, 64 + ear_dy)], closed=False, steps=5)
-        r_in_w = catmull_rom([(152, 48 + ear_dy), (167, 38 + ear_dy), (184, 37 + ear_dy), (179, 52 + ear_dy), (167, 54 + ear_dy)], steps=4)
+        r_shape = [(144, 44 + ear_dy), (168, 30 + ear_dy), (195, 30 + ear_dy), (189, 52 + ear_dy), (182, 66 + ear_dy), (162, 58 + ear_dy)]
+        r_edge = catmull_rom([(144, 44 + ear_dy), (168, 30 + ear_dy), (195, 30 + ear_dy), (189, 52 + ear_dy), (182, 66 + ear_dy)], closed=False, steps=5)
+        r_in_p = catmull_rom([(152, 46 + ear_dy), (169, 36 + ear_dy), (186, 36 + ear_dy), (182, 52 + ear_dy), (168, 56 + ear_dy)], steps=4)
         d.polygon(r_shape, fill=COL["EAR_O"])
         d.line(r_edge, fill=COL["OUT"], width=3, joint="curve")
-        draw_closed(d, r_in_w, COL["EAR_P"], None, 0)
+        draw_closed(d, r_in_p, COL["EAR_P"], None, 0)
     else:
-        r_shape = [(144, 46 + ear_dy), (157, 28 + ear_dy), (176, 17 + ear_dy), (183, 38 + ear_dy), (183, 62 + ear_dy), (162, 58 + ear_dy)]
-        r_edge = catmull_rom([(144, 46 + ear_dy), (157, 28 + ear_dy), (176, 17 + ear_dy), (183, 38 + ear_dy), (183, 62 + ear_dy)], closed=False, steps=5)
-        r_in_w = catmull_rom([(152, 47 + ear_dy), (160, 36 + ear_dy), (173, 25 + ear_dy), (178, 39 + ear_dy), (177, 58 + ear_dy), (165, 52 + ear_dy)], steps=4)
-        r_in_p = catmull_rom([(160, 43 + ear_dy), (169, 36 + ear_dy), (173, 42 + ear_dy), (173, 55 + ear_dy), (162, 53 + ear_dy)], steps=4)
+        r_shape = [(144, 44 + ear_dy), (160, 26 + ear_dy), (181, 16 + ear_dy), (188, 38 + ear_dy), (190, 66 + ear_dy), (164, 60 + ear_dy)]
+        r_edge = catmull_rom([(144, 44 + ear_dy), (160, 26 + ear_dy), (181, 16 + ear_dy), (188, 38 + ear_dy), (190, 66 + ear_dy)], closed=False, steps=5)
+        r_in_p = catmull_rom([(152, 46 + ear_dy), (161, 35 + ear_dy), (176, 24 + ear_dy), (181, 38 + ear_dy), (181, 58 + ear_dy), (166, 54 + ear_dy)], steps=4)
+        r_fluff = [(153, 44 + ear_dy), (160, 46 + ear_dy), (170, 38 + ear_dy), (172, 46 + ear_dy), (182, 42 + ear_dy), (183, 56 + ear_dy), (161, 56 + ear_dy)]
 
         d.polygon(r_shape, fill=COL["EAR_O"])
         d.line(r_edge, fill=COL["OUT"], width=3, joint="curve")
-        draw_closed(d, r_in_w, COL["EAR_W"], None, 0)
-        d.polygon([(151, 42 + ear_dy), (162, 46 + ear_dy), (158, 52 + ear_dy)], fill=COL["EAR_W"])
         draw_closed(d, r_in_p, COL["EAR_P"], None, 0)
+        d.polygon(r_fluff, fill=COL["EAR_W"])
 
 
 def draw_back_hair_and_buns(canvas: Image.Image, dy: int) -> None:
-    """Airy layered S-wave gradient hair + soft scalloped twin buns matching 1.webp."""
+    """Airy layered S-wave hair fanning wide beneath super-chibi head + plush twin buns."""
     l_hair = catmull_rom(
-        [(94, 88 + dy), (72, 108 + dy), (56, 140 + dy), (48, 174 + dy), (62, 198 + dy), (76, 194 + dy), (78, 172 + dy), (92, 162 + dy), (102, 134 + dy)],
+        [(88, 92 + dy), (64, 114 + dy), (48, 148 + dy), (42, 182 + dy), (58, 206 + dy), (74, 200 + dy), (78, 178 + dy), (92, 168 + dy), (102, 142 + dy)],
         steps=6,
     )
     r_hair = catmull_rom(
-        [(162, 88 + dy), (184, 108 + dy), (200, 140 + dy), (208, 174 + dy), (194, 198 + dy), (180, 194 + dy), (178, 172 + dy), (164, 162 + dy), (154, 134 + dy)],
+        [(168, 92 + dy), (192, 114 + dy), (208, 148 + dy), (214, 182 + dy), (198, 206 + dy), (182, 200 + dy), (178, 178 + dy), (164, 168 + dy), (154, 142 + dy)],
         steps=6,
     )
-    l_tip2 = catmull_rom([(54, 152 + dy), (40, 174 + dy), (48, 192 + dy), (62, 182 + dy)], steps=5)
-    r_tip2 = catmull_rom([(202, 152 + dy), (216, 174 + dy), (208, 192 + dy), (194, 182 + dy)], steps=5)
+    l_tip2 = catmull_rom([(46, 160 + dy), (34, 182 + dy), (44, 198 + dy), (58, 188 + dy)], steps=5)
+    r_tip2 = catmull_rom([(210, 160 + dy), (222, 182 + dy), (212, 198 + dy), (198, 188 + dy)], steps=5)
 
     mask = Image.new("L", canvas.size, 0)
     md = ImageDraw.Draw(mask)
     for poly in (l_hair, r_hair, l_tip2, r_tip2):
         md.polygon(poly, fill=255)
-    # Soft triple-puff scalloped braided buns tucked cleanly beneath cat ears
-    for bx, by, br in ((64, 66 + dy, 12), (56, 75 + dy, 10), (70, 78 + dy, 9), (192, 66 + dy, 12), (200, 75 + dy, 10), (186, 78 + dy, 9)):
+    for bx, by, br in ((58, 72 + dy, 13), (50, 82 + dy, 11), (64, 85 + dy, 10), (198, 72 + dy, 13), (206, 82 + dy, 11), (192, 85 + dy, 10)):
         md.ellipse((bx - br, by - br, bx + br, by + br), fill=255)
 
-    hair_grad = paint_gradient_mask(mask, 50 + dy, 200 + dy, HAIR_STOPS)
+    hair_grad = paint_gradient_mask(mask, 52 + dy, 208 + dy, HAIR_STOPS)
     canvas.alpha_composite(hair_grad)
     d = ImageDraw.Draw(canvas, "RGBA")
     for poly in (l_tip2, r_tip2, l_hair, r_hair):
         d.line(poly + [poly[0]], fill=COL["OUT"], width=2, joint="curve")
-    # Delicate inner wave lines on long hair locks
-    d.line([(66, 136 + dy), (60, 162 + dy), (66, 184 + dy)], fill=COL["OUT_S"], width=1, joint="curve")
-    d.line([(190, 136 + dy), (196, 162 + dy), (190, 184 + dy)], fill=COL["OUT_S"], width=1, joint="curve")
-    # Delicate scalloped outlines on outer side of buns
-    d.arc((52, 54 + dy, 76, 78 + dy), 110, 270, fill=COL["OUT"], width=2)
-    d.arc((46, 65 + dy, 66, 85 + dy), 70, 240, fill=COL["OUT"], width=2)
-    d.arc((180, 54 + dy, 204, 78 + dy), -90, 70, fill=COL["OUT"], width=2)
-    d.arc((190, 65 + dy, 210, 85 + dy), -60, 110, fill=COL["OUT"], width=2)
+    d.line([(60, 142 + dy), (54, 168 + dy), (62, 192 + dy)], fill=COL["OUT_S"], width=1, joint="curve")
+    d.line([(196, 142 + dy), (202, 168 + dy), (194, 192 + dy)], fill=COL["OUT_S"], width=1, joint="curve")
+    d.arc((45, 59 + dy, 71, 85 + dy), 110, 270, fill=COL["OUT"], width=2)
+    d.arc((39, 71 + dy, 61, 93 + dy), 70, 240, fill=COL["OUT"], width=2)
+    d.arc((185, 59 + dy, 211, 85 + dy), -90, 70, fill=COL["OUT"], width=2)
+    d.arc((195, 71 + dy, 217, 93 + dy), -60, 110, fill=COL["OUT"], width=2)
 
 
 def draw_body_and_outfit(canvas: Image.Image, frame: str, dy: int) -> None:
+    """Compact super-chibi idol kimono torso + chubby legs + loose socks + platform shoes."""
     d = ImageDraw.Draw(canvas, "RGBA")
 
-    # Neck & chest shadow
-    d.rectangle((120, 134 + dy, 136, 150 + dy), fill=COL["SKIN"])
-    d.ellipse((120, 136 + dy, 136, 144 + dy), fill=COL["SKIN_S"])
+    # Compact collar + neck shade
+    d.rectangle((120, 144 + dy, 136, 158 + dy), fill=COL["SKIN"])
+    d.ellipse((120, 146 + dy, 136, 152 + dy), fill=COL["SKIN_S"])
 
-    # Legs, white loose socks (泡泡袜), and platform shoes with little dark bows
+    # Plump chibi legs, crinkled white loose socks (泡泡袜), and platform shoes (y=198..246)
     if frame.startswith("sleep"):
         for sx, sole_c in ((98, COL["SOLE_B"]), (134, COL["SOLE_P"])):
-            d.rounded_rectangle((sx, 198 + dy, sx + 24, 214 + dy), radius=7, fill=COL["FRIL"], outline=COL["OUT"], width=2)
-            d.rounded_rectangle((sx - 2, 210 + dy, sx + 26, 224 + dy), radius=5, fill=COL["SHOE"], outline=COL["OUT"], width=2)
-            d.rounded_rectangle((sx - 2, 219 + dy, sx + 26, 226 + dy), radius=3, fill=sole_c, outline=COL["OUT"], width=2)
+            d.rounded_rectangle((sx, 204 + dy, sx + 24, 218 + dy), radius=7, fill=COL["FRIL"], outline=COL["OUT"], width=2)
+            d.rounded_rectangle((sx - 2, 214 + dy, sx + 26, 227 + dy), radius=5, fill=COL["SHOE"], outline=COL["OUT"], width=2)
+            d.rounded_rectangle((sx - 2, 222 + dy, sx + 26, 229 + dy), radius=3, fill=sole_c, outline=COL["OUT"], width=2)
     else:
         if frame == "walk_0":
-            legs = [(100, 196 + dy, -5, COL["SOLE_B"], -1), (140, 202 + dy, 4, COL["SOLE_P"], 1)]
+            legs = [(100, 200 + dy, -5, COL["SOLE_B"], -1), (140, 205 + dy, 4, COL["SOLE_P"], 1)]
         elif frame == "walk_1":
-            legs = [(106, 202 + dy, 4, COL["SOLE_B"], -1), (134, 196 + dy, -5, COL["SOLE_P"], 1)]
+            legs = [(106, 205 + dy, 4, COL["SOLE_B"], -1), (134, 200 + dy, -5, COL["SOLE_P"], 1)]
         else:
-            legs = [(103, 198 + dy, 0, COL["SOLE_B"], -1), (137, 198 + dy, 0, COL["SOLE_P"], 1)]
+            legs = [(103, 202 + dy, 0, COL["SOLE_B"], -1), (137, 202 + dy, 0, COL["SOLE_P"], 1)]
 
         for lx, ly, l_off, sole_c, side in legs:
-            d.rectangle((lx + 2, 186 + dy, lx + 14, ly + 12 + l_off), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            # Cute chubby thigh + knee
+            d.rectangle((lx + 1, 194 + dy, lx + 15, ly + 10 + l_off), fill=COL["SKIN"], outline=COL["OUT"], width=2)
             sock_pts = catmull_rom(
-                [(lx + 1, ly + 8 + l_off), (lx + 15, ly + 8 + l_off), (lx + 18, ly + 22 + l_off), (lx + 19, ly + 30 + l_off), (lx - 3, ly + 30 + l_off), (lx - 2, ly + 22 + l_off)],
+                [(lx, ly + 6 + l_off), (lx + 16, ly + 6 + l_off), (lx + 19, ly + 18 + l_off), (lx + 20, ly + 26 + l_off), (lx - 4, ly + 26 + l_off), (lx - 3, ly + 18 + l_off)],
                 steps=5,
             )
             draw_closed(d, sock_pts, COL["FRIL"], COL["OUT"], 2)
-            d.line([(lx + 1, ly + 20 + l_off), (lx + 15, ly + 20 + l_off)], fill=COL["FRIL_S"], width=2)
-            d.rounded_rectangle((lx - 4, ly + 28 + l_off, lx + 20, ly + 40 + l_off), radius=5, fill=COL["SHOE"], outline=COL["OUT"], width=2)
-            d.rounded_rectangle((lx - 4, ly + 37 + l_off, lx + 20, ly + 44 + l_off), radius=3, fill=sole_c, outline=COL["OUT"], width=2)
-            # Cute dark side bow on platform shoe (signature 1.webp detail)
+            d.line([(lx, ly + 16 + l_off), (lx + 16, ly + 16 + l_off)], fill=COL["FRIL_S"], width=2)
+            d.rounded_rectangle((lx - 4, ly + 24 + l_off, lx + 20, ly + 35 + l_off), radius=5, fill=COL["SHOE"], outline=COL["OUT"], width=2)
+            d.rounded_rectangle((lx - 4, ly + 32 + l_off, lx + 20, ly + 39 + l_off), radius=3, fill=sole_c, outline=COL["OUT"], width=2)
             bx = (lx - 4) if side == -1 else (lx + 20)
-            by = ly + 32 + l_off
+            by = ly + 28 + l_off
             d.polygon([(bx, by), (bx + side * 6, by - 4), (bx + side * 6, by + 4)], fill=COL["KIM_D"], outline=COL["OUT"], width=1)
 
     # White ruffled petticoat + pleated navy mini-skirt
     petticoat = catmull_rom(
-        [(88, 190 + dy), (108, 196 + dy), (128, 194 + dy), (148, 196 + dy), (168, 190 + dy), (156, 174 + dy), (100, 174 + dy)],
+        [(88, 198 + dy), (108, 204 + dy), (128, 202 + dy), (148, 204 + dy), (168, 198 + dy), (156, 182 + dy), (100, 182 + dy)],
         steps=5,
     )
     draw_closed(d, petticoat, COL["FRIL"], COL["OUT"], 2)
-    skirt = catmull_rom([(94, 184 + dy), (128, 188 + dy), (162, 184 + dy), (150, 166 + dy), (106, 166 + dy)], steps=4)
+    skirt = catmull_rom([(94, 192 + dy), (128, 196 + dy), (162, 192 + dy), (150, 174 + dy), (106, 174 + dy)], steps=4)
     draw_closed(d, skirt, COL["KIM_D"], COL["OUT"], 2)
 
-    # High navy collar + diamond chest cutout + midriff + violet star obi
-    d.rounded_rectangle((112, 142 + dy, 144, 150 + dy), radius=4, fill=COL["KIM_D"], outline=COL["OUT"], width=2)
-    torso = catmull_rom([(108, 148 + dy), (148, 148 + dy), (146, 168 + dy), (110, 168 + dy)], steps=4)
+    # Compact bodice + diamond chest cutout + midriff + violet star obi
+    d.rounded_rectangle((112, 152 + dy, 144, 159 + dy), radius=4, fill=COL["KIM_D"], outline=COL["OUT"], width=2)
+    torso = catmull_rom([(108, 157 + dy), (148, 157 + dy), (146, 176 + dy), (110, 176 + dy)], steps=4)
     draw_closed(d, torso, COL["KIM_D"], COL["OUT"], 2)
-    d.polygon([(128, 149 + dy), (138, 158 + dy), (128, 164 + dy), (118, 158 + dy)], fill=COL["FRIL"])
-    d.polygon([(128, 152 + dy), (134, 158 + dy), (128, 162 + dy), (122, 158 + dy)], fill=COL["STAR_C"])
-    d.rectangle((117, 162 + dy, 139, 168 + dy), fill=COL["SKIN"])
-    obi = catmull_rom([(106, 166 + dy), (150, 166 + dy), (152, 176 + dy), (104, 176 + dy)], steps=4)
+    d.polygon([(128, 158 + dy), (138, 166 + dy), (128, 171 + dy), (118, 166 + dy)], fill=COL["FRIL"])
+    d.polygon([(128, 160 + dy), (134, 166 + dy), (128, 169 + dy), (122, 166 + dy)], fill=COL["STAR_C"])
+    d.rectangle((117, 170 + dy, 139, 176 + dy), fill=COL["SKIN"])
+    obi = catmull_rom([(106, 174 + dy), (150, 174 + dy), (152, 184 + dy), (104, 184 + dy)], steps=4)
     draw_closed(d, obi, COL["SAS"], COL["OUT"], 2)
-    draw_star(d, 128, 171 + dy, 7, 8, bright=True)
+    draw_star(d, 128, 179 + dy, 7, 8, bright=True)
 
-    # Detached wide kimono sleeves + arms + pose-specific integrated props
+    # Wide detached kimono sleeves + pose props
     if frame.startswith("happy"):
         lift = -6 if frame == "happy_1" else 0
         for sx, side in ((92, -1), (164, 1)):
-            d.ellipse((sx - 12, 134 + dy + lift, sx + 12, 162 + dy + lift), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
-            d.arc((sx - 10, 136 + dy + lift, sx + 10, 148 + dy + lift), 180, 360, fill=COL["FRIL"], width=3)
-            px, py = sx + side * 2, 130 + dy + lift
+            d.ellipse((sx - 12, 142 + dy + lift, sx + 12, 170 + dy + lift), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
+            d.arc((sx - 10, 144 + dy + lift, sx + 10, 156 + dy + lift), 180, 360, fill=COL["FRIL"], width=3)
+            px, py = sx + side * 2, 138 + dy + lift
             d.ellipse((px - 8, py - 8, px + 8, py + 8), fill=COL["SKIN"], outline=COL["OUT"], width=2)
             d.ellipse((px - 3, py - 2, px + 3, py + 4), fill=COL["BLUSH"])
     elif frame.startswith("code"):
-        l_slv = catmull_rom([(106, 152 + dy), (92, 160 + dy), (88, 184 + dy), (106, 184 + dy)], steps=4)
+        l_slv = catmull_rom([(106, 160 + dy), (92, 168 + dy), (88, 192 + dy), (106, 192 + dy)], steps=4)
         draw_closed(d, l_slv, COL["KIM_D"], COL["OUT"], 2)
-        d.line([(89, 181 + dy), (105, 181 + dy)], fill=COL["FRIL"], width=3)
-        d.ellipse((91, 183 + dy, 103, 194 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+        d.line([(89, 189 + dy), (105, 189 + dy)], fill=COL["FRIL"], width=3)
+        d.ellipse((91, 191 + dy, 103, 202 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
 
         lift = -5 if frame == "code_1" else 0
-        r_slv = catmull_rom([(150, 150 + dy), (168, 140 + dy + lift), (176, 164 + dy + lift), (156, 170 + dy)], steps=4)
+        r_slv = catmull_rom([(150, 158 + dy), (168, 148 + dy + lift), (176, 172 + dy + lift), (156, 178 + dy)], steps=4)
         draw_closed(d, r_slv, COL["KIM_D"], COL["OUT"], 2)
-        d.ellipse((168, 136 + dy + lift, 180, 148 + dy + lift), fill=COL["SKIN"], outline=COL["OUT"], width=2)
-        d.line([(176, 140 + dy + lift), (206, 104 + dy + lift)], fill=COL["STAR_G"], width=4)
-        draw_star(d, 208, 98 + dy + lift, 17, 21, bright=True)
+        d.ellipse((168, 144 + dy + lift, 180, 156 + dy + lift), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+        d.line([(176, 148 + dy + lift), (206, 112 + dy + lift)], fill=COL["STAR_G"], width=4)
+        draw_star(d, 208, 106 + dy + lift, 17, 21, bright=True)
     elif frame.startswith("term"):
         for sx in (96, 160):
-            d.ellipse((sx - 10, 150 + dy, sx + 10, 178 + dy), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
-        d.rounded_rectangle((96, 152 + dy, 160, 184 + dy), radius=6, fill=COL["RUNE_BG"], outline=COL["STAR_V"], width=2)
+            d.ellipse((sx - 10, 158 + dy, sx + 10, 186 + dy), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
+        d.rounded_rectangle((96, 160 + dy, 160, 192 + dy), radius=6, fill=COL["RUNE_BG"], outline=COL["STAR_V"], width=2)
         if frame == "term_0":
-            d.line([(106, 163 + dy), (132, 163 + dy)], fill=COL["STAR_C"], width=4)
-            d.line([(106, 172 + dy), (144, 172 + dy)], fill=COL["STAR_V"], width=3)
-            d.ellipse((98, 146 + dy, 110, 158 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
-            d.ellipse((146, 141 + dy, 158, 153 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            d.line([(106, 171 + dy), (132, 171 + dy)], fill=COL["STAR_C"], width=4)
+            d.line([(106, 180 + dy), (144, 180 + dy)], fill=COL["STAR_V"], width=3)
+            d.ellipse((98, 154 + dy, 110, 166 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            d.ellipse((146, 149 + dy, 158, 161 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
         else:
-            d.line([(106, 163 + dy), (146, 163 + dy)], fill=COL["STAR_G"], width=4)
-            d.line([(114, 172 + dy), (150, 172 + dy)], fill=COL["STAR_C"], width=3)
-            d.ellipse((98, 141 + dy, 110, 153 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
-            d.ellipse((146, 146 + dy, 158, 158 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            d.line([(106, 171 + dy), (146, 171 + dy)], fill=COL["STAR_G"], width=4)
+            d.line([(114, 180 + dy), (150, 180 + dy)], fill=COL["STAR_C"], width=3)
+            d.ellipse((98, 149 + dy, 110, 161 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            d.ellipse((146, 154 + dy, 158, 166 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
     elif frame.startswith("read"):
         for sx in (98, 158):
-            d.ellipse((sx - 10, 150 + dy, sx + 10, 178 + dy), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
-        d.rounded_rectangle((96, 158 + dy, 160, 188 + dy), radius=5, fill=COL["BOOK"], outline=COL["OUT"], width=2)
-        d.rectangle((102, 162 + dy, 126, 184 + dy), fill=COL["FRIL"])
-        d.rectangle((130, 162 + dy, 154, 184 + dy), fill=COL["STAR_C"] if frame == "read_1" else COL["FRIL"])
-        d.line([(107, 169 + dy), (121, 169 + dy)], fill=COL["STAR_V"], width=2)
-        d.line([(135, 169 + dy), (149, 169 + dy)], fill=COL["STAR_G"], width=2)
+            d.ellipse((sx - 10, 158 + dy, sx + 10, 186 + dy), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
+        d.rounded_rectangle((96, 166 + dy, 160, 196 + dy), radius=5, fill=COL["BOOK"], outline=COL["OUT"], width=2)
+        d.rectangle((102, 170 + dy, 126, 192 + dy), fill=COL["FRIL"])
+        d.rectangle((130, 170 + dy, 154, 192 + dy), fill=COL["STAR_C"] if frame == "read_1" else COL["FRIL"])
+        d.line([(107, 177 + dy), (121, 177 + dy)], fill=COL["STAR_V"], width=2)
+        d.line([(135, 177 + dy), (149, 177 + dy)], fill=COL["STAR_G"], width=2)
     elif frame.startswith("type"):
         for sx in (96, 160):
-            d.ellipse((sx - 10, 148 + dy, sx + 10, 176 + dy), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
+            d.ellipse((sx - 10, 156 + dy, sx + 10, 184 + dy), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
         if frame == "type_0":
-            d.ellipse((100, 166 + dy, 114, 180 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
-            d.ellipse((142, 154 + dy, 156, 168 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
-            draw_star(d, 107, 186 + dy, 6, 6, bright=True)
+            d.ellipse((100, 174 + dy, 114, 188 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            d.ellipse((142, 162 + dy, 156, 176 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            draw_star(d, 107, 194 + dy, 6, 6, bright=True)
         else:
-            d.ellipse((100, 154 + dy, 114, 168 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
-            d.ellipse((142, 166 + dy, 156, 180 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
-            draw_star(d, 149, 186 + dy, 6, 6, bright=True)
+            d.ellipse((100, 162 + dy, 114, 176 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            d.ellipse((142, 174 + dy, 156, 188 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            draw_star(d, 149, 194 + dy, 6, 6, bright=True)
     elif frame.startswith("oops"):
         for sx in (94, 162):
-            d.ellipse((sx - 11, 140 + dy, sx + 11, 168 + dy), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
-            d.arc((sx - 9, 141 + dy, sx + 9, 152 + dy), 180, 360, fill=COL["FRIL"], width=3)
-            d.ellipse((sx - 6, 128 + dy, sx + 6, 140 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+            d.ellipse((sx - 11, 148 + dy, sx + 11, 176 + dy), fill=COL["KIM_D"], outline=COL["OUT"], width=2)
+            d.arc((sx - 9, 149 + dy, sx + 9, 160 + dy), 180, 360, fill=COL["FRIL"], width=3)
+            d.ellipse((sx - 6, 136 + dy, sx + 6, 148 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
     else:
         swing = 6 if frame == "walk_0" else (-6 if frame == "walk_1" else 0)
-        l_slv = catmull_rom([(108, 150 + dy), (92 + swing, 160 + dy), (85 + swing, 187 + dy), (108 + swing // 2, 187 + dy)], steps=4)
-        r_slv = catmull_rom([(148, 150 + dy), (164 - swing, 160 + dy), (171 - swing, 187 + dy), (148 - swing // 2, 187 + dy)], steps=4)
+        l_slv = catmull_rom([(108, 158 + dy), (92 + swing, 168 + dy), (85 + swing, 194 + dy), (108 + swing // 2, 194 + dy)], steps=4)
+        r_slv = catmull_rom([(148, 158 + dy), (164 - swing, 168 + dy), (171 - swing, 194 + dy), (148 - swing // 2, 194 + dy)], steps=4)
         draw_closed(d, l_slv, COL["KIM_D"], COL["OUT"], 2)
         draw_closed(d, r_slv, COL["KIM_D"], COL["OUT"], 2)
-        d.line([(86 + swing, 183 + dy), (107 + swing // 2, 183 + dy)], fill=COL["FRIL"], width=4)
-        d.line([(149 - swing // 2, 183 + dy), (170 - swing, 183 + dy)], fill=COL["FRIL"], width=4)
-        # Signature dangling dark kimono ribbons + star charms from 1.webp
-        d.line([(86 + swing, 187 + dy), (76 + swing, 206 + dy)], fill=COL["OUT"], width=2)
-        draw_star(d, 74 + swing, 209 + dy, 5, 6, bright=False)
-        d.line([(170 - swing, 187 + dy), (180 - swing, 206 + dy)], fill=COL["OUT"], width=2)
-        draw_star(d, 182 - swing, 209 + dy, 5, 6, bright=False)
-        d.ellipse((91 + swing, 187 + dy, 102 + swing, 198 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
-        d.ellipse((154 - swing, 187 + dy, 165 - swing, 198 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+        d.line([(86 + swing, 190 + dy), (107 + swing // 2, 190 + dy)], fill=COL["FRIL"], width=4)
+        d.line([(149 - swing // 2, 190 + dy), (170 - swing, 190 + dy)], fill=COL["FRIL"], width=4)
+        d.line([(86 + swing, 194 + dy), (76 + swing, 212 + dy)], fill=COL["OUT"], width=2)
+        draw_star(d, 74 + swing, 215 + dy, 5, 6, bright=False)
+        d.line([(170 - swing, 194 + dy), (180 - swing, 212 + dy)], fill=COL["OUT"], width=2)
+        draw_star(d, 182 - swing, 215 + dy, 5, 6, bright=False)
+        d.ellipse((91 + swing, 194 + dy, 102 + swing, 205 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
+        d.ellipse((154 - swing, 194 + dy, 165 - swing, 205 + dy), fill=COL["SKIN"], outline=COL["OUT"], width=2)
 
 
 def draw_head_face_and_front_hair(canvas: Image.Image, frame: str, dy: int) -> None:
     d = ImageDraw.Draw(canvas, "RGBA")
 
-    # 1. Luminous anime chibi face with soft mochi cheeks and gentle jawline (width=2 delicate lineart)
+    # 1. Larger plush super-chibi head (~55% of total height) with soft mochi cheeks
     face_pts = catmull_rom(
         [
-            (128, 64 + dy), (164, 70 + dy), (177, 94 + dy), (179, 114 + dy),
-            (168, 130 + dy), (146, 138 + dy), (128, 140 + dy), (110, 138 + dy),
-            (88, 130 + dy), (77, 114 + dy), (79, 94 + dy), (92, 70 + dy),
+            (128, 66 + dy), (168, 72 + dy), (183, 98 + dy), (186, 120 + dy),
+            (173, 138 + dy), (148, 147 + dy), (128, 149 + dy), (108, 147 + dy),
+            (83, 138 + dy), (70, 120 + dy), (73, 98 + dy), (88, 72 + dy),
         ],
         steps=7,
     )
     draw_closed(d, face_pts, COL["SKIN"], COL["OUT"], 2)
 
-    # 2. Rosy blush & authentic 1.webp glossy heterochromia anime eyes
-    blush_r = 9 if frame.startswith(("happy", "sleep", "oops", "type")) else 7
-    d.ellipse((81, 118 + dy, 81 + blush_r * 2, 126 + dy), fill=COL["BLUSH"])
-    d.ellipse((175 - blush_r * 2, 118 + dy, 175, 126 + dy), fill=COL["BLUSH"])
+    # 2. Delicate eyebrows peeking through curved front bangs + rosy blush + heterochromia eyes
+    d.arc((88, 92 + dy, 108, 101 + dy), 195, 335, fill=COL["OUT_S"], width=2)
+    d.arc((148, 92 + dy, 168, 101 + dy), 205, 345, fill=COL["OUT_S"], width=2)
+
+    blush_r = 10 if frame.startswith(("happy", "sleep", "oops", "type")) else 8
+    d.ellipse((74, 124 + dy, 74 + blush_r * 2, 133 + dy), fill=COL["BLUSH"])
+    d.ellipse((182 - blush_r * 2, 124 + dy, 182, 133 + dy), fill=COL["BLUSH"])
 
     eye_mode = "open"
     if frame.startswith("happy"):
@@ -539,116 +526,114 @@ def draw_head_face_and_front_hair(canvas: Image.Image, frame: str, dy: int) -> N
 
     left_stops = [(0.0, (112, 18, 58)), (0.45, (255, 52, 128)), (1.0, (255, 176, 212))]
     right_stops = [(0.0, (134, 74, 0)), (0.45, (255, 178, 38)), (1.0, (255, 236, 140))]
-    draw_anime_eye(canvas, 103, 108 + dy, left_stops, eye_mode)
-    draw_anime_eye(canvas, 153, 108 + dy, right_stops, eye_mode)
+    draw_anime_eye(canvas, 100, 114 + dy, left_stops, eye_mode)
+    draw_anime_eye(canvas, 156, 114 + dy, right_stops, eye_mode)
 
-    # 3. Delicate anime mouth
+    # 3. Expressive anime chibi mouth
     d = ImageDraw.Draw(canvas, "RGBA")
-    my = 127 + dy
+    my = 135 + dy
     if frame.startswith(("happy", "code", "type")):
-        d.polygon([(122, my), (128, my + 7), (134, my)], fill=COL["HEART"], outline=COL["OUT"], width=1)
+        d.polygon([(121, my - 1), (128, my + 8), (135, my - 1)], fill=COL["HEART"], outline=COL["OUT"], width=1)
     elif frame.startswith("oops"):
-        d.ellipse((124, my - 1, 132, my + 6), fill=(154, 34, 78, 255), outline=COL["OUT"], width=1)
+        d.ellipse((124, my - 1, 132, my + 7), fill=(154, 34, 78, 255), outline=COL["OUT"], width=1)
     elif frame.startswith("sleep"):
-        d.arc((124, my - 1, 132, my + 4), 10, 170, fill=COL["MOUTH"], width=2)
+        d.arc((123, my - 1, 133, my + 4), 10, 170, fill=COL["MOUTH"], width=2)
     else:
-        d.arc((120, my - 2, 128, my + 3), 10, 170, fill=COL["MOUTH"], width=2)
-        d.arc((128, my - 2, 136, my + 3), 10, 170, fill=COL["MOUTH"], width=2)
+        d.arc((120, my - 2, 128, my + 4), 10, 170, fill=COL["MOUTH"], width=2)
+        d.arc((128, my - 2, 136, my + 4), 10, 170, fill=COL["MOUTH"], width=2)
 
-    # 4. Spherical crown + seamless wispy anime bangs + cheek-hugging side locks
+    # 4. Expressive layered super-chibi dome hair & central tapered bang lock (inspired by 1.webp/crosspet)
     hair_mask = Image.new("L", canvas.size, 0)
     hd = ImageDraw.Draw(hair_mask)
     dome_pts = catmull_rom(
-        [(70, 96 + dy), (74, 62 + dy), (98, 44 + dy), (128, 39 + dy), (158, 44 + dy), (182, 62 + dy), (186, 96 + dy), (168, 76 + dy), (128, 70 + dy), (88, 76 + dy)],
+        [(62, 102 + dy), (68, 62 + dy), (96, 40 + dy), (128, 35 + dy), (160, 40 + dy), (188, 62 + dy), (194, 102 + dy), (170, 82 + dy), (128, 76 + dy), (86, 82 + dy)],
         steps=6,
     )
     hd.polygon(dome_pts, fill=255)
 
-    bang_tips = [
-        [(82, 68 + dy), (85, 96 + dy), (94, 88 + dy), (98, 68 + dy)],
-        [(98, 68 + dy), (105, 89 + dy), (114, 95 + dy), (117, 68 + dy)],
-        [(117, 68 + dy), (122, 89 + dy), (128, 97 + dy), (134, 89 + dy), (138, 68 + dy)],
-        [(138, 68 + dy), (142, 95 + dy), (150, 89 + dy), (156, 68 + dy)],
-        [(156, 68 + dy), (162, 88 + dy), (171, 96 + dy), (174, 68 + dy)],
-    ]
-    side_l = catmull_rom([(70, 74 + dy), (82, 82 + dy), (82, 120 + dy), (92, 140 + dy), (76, 138 + dy), (66, 114 + dy)], steps=5)
-    side_r = catmull_rom([(186, 74 + dy), (174, 82 + dy), (174, 120 + dy), (164, 140 + dy), (180, 138 + dy), (190, 114 + dy)], steps=5)
-    ahoge = catmull_rom([(125, 41 + dy), (124, 24 + dy), (137, 15 + dy), (148, 17 + dy), (135, 23 + dy), (131, 41 + dy)], steps=5)
+    # Expressive parted bangs: tapered center tuft between eyes + curved wispy side bangs
+    center_bang = [(112, 68 + dy), (118, 96 + dy), (128, 112 + dy), (138, 96 + dy), (144, 68 + dy)]
+    left_bang = [(76, 70 + dy), (80, 102 + dy), (92, 92 + dy), (104, 88 + dy), (114, 68 + dy)]
+    right_bang = [(142, 68 + dy), (152, 88 + dy), (164, 92 + dy), (176, 102 + dy), (180, 70 + dy)]
+    bang_groups = [center_bang, left_bang, right_bang]
 
-    for bpts in bang_tips:
+    side_l = catmull_rom([(62, 76 + dy), (76, 86 + dy), (76, 124 + dy), (88, 148 + dy), (70, 146 + dy), (58, 118 + dy)], steps=5)
+    side_r = catmull_rom([(194, 76 + dy), (180, 86 + dy), (180, 124 + dy), (168, 148 + dy), (186, 146 + dy), (198, 118 + dy)], steps=5)
+    ahoge = catmull_rom([(125, 37 + dy), (123, 20 + dy), (138, 11 + dy), (150, 14 + dy), (136, 20 + dy), (131, 37 + dy)], steps=5)
+
+    for bpts in bang_groups:
         hd.polygon([(bpts[0][0], 54 + dy)] + bpts + [(bpts[-1][0], 54 + dy)], fill=255)
     for poly in (side_l, side_r, ahoge):
         hd.polygon(poly, fill=255)
 
-    hair_rgba = paint_gradient_mask(hair_mask, 16 + dy, 145 + dy, HAIR_STOPS)
+    hair_rgba = paint_gradient_mask(hair_mask, 14 + dy, 152 + dy, HAIR_STOPS)
     canvas.alpha_composite(hair_rgba)
 
     d = ImageDraw.Draw(canvas, "RGBA")
-    # Silky anime highlight arcs across dome
-    for hx0, hx1, hy in ((88, 114, 55 + dy), (120, 136, 53 + dy), (142, 168, 55 + dy)):
+    for hx0, hx1, hy in ((84, 112, 54 + dy), (118, 138, 52 + dy), (144, 172, 54 + dy)):
         d.line([(hx0, hy + 4), ((hx0 + hx1) / 2, hy), (hx1, hy + 4)], fill=COL["H_HI"], width=4, joint="curve")
 
     outer_dome_arc = catmull_rom(
-        [(70, 96 + dy), (74, 62 + dy), (98, 44 + dy), (128, 39 + dy), (158, 44 + dy), (182, 62 + dy), (186, 96 + dy)],
+        [(62, 102 + dy), (68, 62 + dy), (96, 40 + dy), (128, 35 + dy), (160, 40 + dy), (188, 62 + dy), (194, 102 + dy)],
         closed=False,
         steps=6,
     )
     d.line(outer_dome_arc, fill=COL["OUT"], width=2, joint="curve")
-    for bpts in bang_tips:
+    for bpts in bang_groups:
         d.line(bpts, fill=COL["OUT"], width=2, joint="curve")
     for poly in (side_l, side_r, ahoge):
         d.line(poly + [poly[0]], fill=COL["OUT"], width=2, joint="curve")
 
-    # 5. Seamless plush cat ears & elongated Gemini star hairpin
+    # 5. Seamless plush cat ears & oversized 4-point Gemini star hairpin
     draw_cat_ears(canvas, frame, dy)
     d = ImageDraw.Draw(canvas, "RGBA")
     bright_pin = frame.startswith(("happy", "code", "term"))
-    draw_star(d, 174, 70 + dy, 13, 18, bright=bright_pin)
-    draw_star(d, 174, 96 + dy, 5, 6, bright=bright_pin)
+    draw_star(d, 178, 70 + dy, 15, 20, bright=bright_pin)
+    draw_star(d, 178, 98 + dy, 5, 6, bright=bright_pin)
 
 
 def draw_integrated_fx(canvas: Image.Image, frame: str, dy: int) -> None:
     d = ImageDraw.Draw(canvas, "RGBA")
     if frame == "happy_0":
-        draw_heart(d, 40, 84, 9)
-        draw_star(d, 214, 58, 7, 8, bright=True)
+        draw_heart(d, 38, 86, 9)
+        draw_star(d, 218, 58, 7, 8, bright=True)
     elif frame == "happy_1":
-        draw_heart(d, 38, 60, 10)
-        draw_heart(d, 216, 86, 8)
-        draw_star(d, 54, 34, 7, 8, bright=True)
-        draw_star(d, 206, 38, 8, 9, bright=True)
+        draw_heart(d, 36, 62, 10)
+        draw_heart(d, 220, 88, 8)
+        draw_star(d, 52, 34, 7, 8, bright=True)
+        draw_star(d, 210, 38, 8, 9, bright=True)
     elif frame == "code_0":
-        draw_star(d, 38, 92, 11, 13, bright=True)
-        d.ellipse((222, 66, 230, 74), fill=COL["STAR_C"], outline=COL["OUT"], width=2)
+        draw_star(d, 36, 92, 11, 13, bright=True)
+        d.ellipse((224, 66, 232, 74), fill=COL["STAR_C"], outline=COL["OUT"], width=2)
     elif frame == "code_1":
-        draw_star(d, 40, 62, 12, 14, bright=True)
-        draw_star(d, 220, 146, 10, 12, bright=False)
-        d.ellipse((224, 52, 232, 60), fill=COL["STAR_G"], outline=COL["OUT"], width=2)
+        draw_star(d, 38, 62, 12, 14, bright=True)
+        draw_star(d, 222, 150, 10, 12, bright=False)
+        d.ellipse((226, 52, 234, 60), fill=COL["STAR_G"], outline=COL["OUT"], width=2)
     elif frame == "term_0":
-        d.arc((192, 50 + dy, 212, 86 + dy), -60, 60, fill=COL["STAR_C"], width=4)
-        d.arc((202, 44 + dy, 226, 92 + dy), -50, 50, fill=COL["STAR_V"], width=3)
+        d.arc((196, 50 + dy, 216, 86 + dy), -60, 60, fill=COL["STAR_C"], width=4)
+        d.arc((206, 44 + dy, 230, 92 + dy), -50, 50, fill=COL["STAR_V"], width=3)
     elif frame == "term_1":
-        d.arc((194, 48 + dy, 216, 88 + dy), -65, 65, fill=COL["STAR_G"], width=4)
-        d.arc((206, 40 + dy, 232, 96 + dy), -55, 55, fill=COL["STAR_C"], width=4)
+        d.arc((198, 48 + dy, 220, 88 + dy), -65, 65, fill=COL["STAR_G"], width=4)
+        d.arc((210, 40 + dy, 236, 96 + dy), -55, 55, fill=COL["STAR_C"], width=4)
     elif frame == "read_0":
-        d.ellipse((121, 140 + dy, 135, 154 + dy), fill=COL["STAR_C"], outline=COL["OUT"], width=2)
+        d.ellipse((121, 148 + dy, 135, 162 + dy), fill=COL["STAR_C"], outline=COL["OUT"], width=2)
     elif frame == "read_1":
-        draw_star(d, 128, 140 + dy, 8, 9, bright=True)
-        d.ellipse((108, 146 + dy, 116, 154 + dy), fill=COL["STAR_V"])
-        d.ellipse((142, 144 + dy, 150, 152 + dy), fill=COL["STAR_G"])
+        draw_star(d, 128, 148 + dy, 8, 9, bright=True)
+        d.ellipse((108, 154 + dy, 116, 162 + dy), fill=COL["STAR_V"])
+        d.ellipse((142, 152 + dy, 150, 160 + dy), fill=COL["STAR_G"])
     elif frame == "sleep_0":
-        d.line([(194, 46), (210, 46), (194, 62), (210, 62)], fill=COL["ZZZ"], width=4, joint="curve")
+        d.line([(198, 44), (214, 44), (198, 60), (214, 60)], fill=COL["ZZZ"], width=4, joint="curve")
     elif frame == "sleep_1":
-        d.line([(200, 26), (222, 26), (200, 48), (222, 48)], fill=COL["ZZZ"], width=5, joint="curve")
+        d.line([(204, 24), (226, 24), (204, 46), (226, 46)], fill=COL["ZZZ"], width=5, joint="curve")
     elif frame == "oops_0":
-        d.polygon([(194, 92 + dy), (200, 108 + dy), (188, 108 + dy)], fill=COL["TEAR"], outline=COL["OUT"], width=2)
-        draw_star(d, 64, 34, 7, 8, bright=True)
+        d.polygon([(198, 96 + dy), (204, 112 + dy), (192, 112 + dy)], fill=COL["TEAR"], outline=COL["OUT"], width=2)
+        draw_star(d, 60, 32, 7, 8, bright=True)
     elif frame == "oops_1":
-        d.polygon([(198, 98 + dy), (204, 114 + dy), (192, 114 + dy)], fill=COL["TEAR"], outline=COL["OUT"], width=2)
+        d.polygon([(202, 102 + dy), (208, 118 + dy), (196, 118 + dy)], fill=COL["TEAR"], outline=COL["OUT"], width=2)
         draw_star(d, 102, 16, 6, 7, bright=True)
         draw_star(d, 156, 16, 6, 7, bright=True)
     elif frame == "walk_0":
-        draw_star(d, 212, 180, 6, 7, bright=True)
+        draw_star(d, 214, 184, 6, 7, bright=True)
 
 
 def render_frame(frame: str) -> Image.Image:
@@ -788,7 +773,7 @@ HELPER_PALETTE = [
 ]
 KITTEN_LOGICAL = 24
 KITTEN_PNG_SIZE = 72
-KITTEN_SIXEL_SIZE = 48
+KITTEN_SIXEL_SIZE = 42
 
 
 class PixelCanvas:
@@ -1007,7 +992,7 @@ def main() -> None:
     kittens_sheet.save(OUT_DIR / "kittens_sheet.png", "PNG")
 
     manifest = {
-        "version": 6,
+        "version": 7,
         "masterSize": MASTER_SIZE,
         "pngSize": PNG_SIZE,
         "sixelSize": SIXEL_SIZE,
@@ -1018,7 +1003,7 @@ def main() -> None:
     }
     (OUT_DIR / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(
-        f"Built {len(FRAMES) * 2} 1.webp-styled 256->128/96 catgirl frames and "
+        f"Built {len(FRAMES) * 2} super-chibi 256->128/84 catgirl frames and "
         f"{len(HELPER_PALETTE) * 4} helper kittens in {OUT_DIR}"
     )
 

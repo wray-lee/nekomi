@@ -1,10 +1,10 @@
 {
-  "version": 6,
+  "version": 7,
   "masterSize": 256,
   "pngSize": 128,
-  "sixelSize": 96,
+  "sixelSize": 84,
   "kittenPngSize": 72,
-  "kittenSixelSize": 48,
+  "kittenSixelSize": 42,
   "poses": [
     {
       "pose": "idle_0",

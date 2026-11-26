@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { NekomiEngine } from './engine';
 import { SpriteRenderer, parseGfxFlag } from './gfx-protocol';
-import { extractPrintableChar, parseTerminalInput } from './input-parser';
+import { extractPrintableChar, parseTerminalInput, translateMouseForChild } from './input-parser';
 import { isBodyHit, renderBand } from './tui-render';
 import { BAND_ROWS } from './tui-sprite';
 import type { AgyHookPayload, EventKind, RenderSnapshot } from './types';
@@ -10,7 +10,8 @@ const PREFERRED_PORT = Number(process.env.NEKOMI_PORT ?? 47821);
 const TARGET_CMD = process.env.NEKOMI_CMD ?? 'agy';
 const RAW_ARGV = process.argv.slice(2);
 const REQUESTED_GFX = parseGfxFlag(RAW_ARGV);
-const TARGET_ARGS = RAW_ARGV.filter((arg) => !arg.startsWith('--gfx='));
+const ENABLE_MOUSE = !RAW_ARGV.includes('--no-mouse') && process.env.NEKOMI_MOUSE !== '0';
+const TARGET_ARGS = RAW_ARGV.filter((arg) => !arg.startsWith('--gfx=') && arg !== '--no-mouse');
 
 const engine = new NekomiEngine();
 let demoQueue: Array<{ kind: 'event' | 'activity'; value: string; until: number }> = [];
@@ -141,6 +142,7 @@ async function run(): Promise<void> {
   let lastBandKey = '';
   let lastSnapshot: RenderSnapshot = engine.snapshot(cols);
   let repaintScheduled = false;
+  let childMouseEnabled = false;
 
   const paintBand = (force = false) => {
     lastSnapshot = engine.snapshot(cols);
@@ -149,12 +151,17 @@ async function run(): Promise<void> {
     if (!force && key === lastBandKey) return;
     lastBandKey = key;
 
-    let out = `\x1b[?2026h\x1b7\x1b[1;${agyRows}r`;
+    // Reset DECSTBM to full screen while painting the bottom 6 rows so Windows Terminal Sixel
+    // does not clip pixels below agyRows, then restore 1..agyRows before restoring cursor.
+    let out = `\x1b[?2026h\x1b7\x1b[r`;
     for (let i = 0; i < lines.length; i++) {
       out += `\x1b[${agyRows + 1 + i};1H\x1b[2K${lines[i]}`;
     }
+    if (spriteRenderer.protocol === 'sixel') {
+      out += '\x1b[?80h';
+    }
     out += spriteRenderer.renderOverlay(lastSnapshot, cols, agyRows + 1);
-    out += '\x1b8\x1b[?2026l';
+    out += `\x1b[1;${agyRows}r\x1b8\x1b[?2026l`;
     process.stdout.write(out);
   };
 
@@ -167,8 +174,9 @@ async function run(): Promise<void> {
     }, 15);
   };
 
-  // Reserve bottom BAND_ROWS via DECSTBM, enable SGR mouse tracking, and preload Kitty images if enabled.
-  process.stdout.write(`\x1b[2J\x1b[1;${agyRows}r\x1b[1;1H\x1b[?1000h\x1b[?1006h${spriteRenderer.initSequence()}`);
+  // Reserve bottom BAND_ROWS via DECSTBM, enable SGR mouse tracking unless disabled, and preload if needed.
+  const mouseInit = ENABLE_MOUSE ? '\x1b[?1000h\x1b[?1006h' : '';
+  process.stdout.write(`\x1b[2J\x1b[1;${agyRows}r\x1b[1;1H${mouseInit}${spriteRenderer.initSequence()}`);
   paintBand(true);
 
   if (process.stdin.isTTY) {
@@ -182,8 +190,10 @@ async function run(): Promise<void> {
     rows: agyRows,
     data(_terminal, data) {
       const text = decoder.decode(data);
+      if (/\x1b\[\?(?:1000|1002|1003)h/.test(text)) childMouseEnabled = true;
+      if (/\x1b\[\?(?:1000|1002|1003)l/.test(text)) childMouseEnabled = false;
       process.stdout.write(text);
-      if (/\x1b\[2J|\x1b\[\?1049[hl]|\x1b\[r/.test(text)) {
+      if (/\x1b\[[0-3]?J|\x1b\[\?1049[hl]|\x1b\[\d*(?:;\d*)?r/.test(text)) {
         scheduleRepaint();
       }
     },
@@ -202,7 +212,7 @@ async function run(): Promise<void> {
     for (const tok of parseTerminalInput(chunk)) {
       if (tok.kind === 'mouse') {
         if (tok.row > agyRows) {
-          // Click inside bottom 6-row Gemini pet band
+          // Click inside bottom 6-row nekomi pet band
           if (!tok.release && tok.btn === 0) {
             if (isBodyHit(lastSnapshot, tok.col, tok.row - agyRows) || lastSnapshot.isAsleep) {
               engine.poke();
@@ -214,7 +224,8 @@ async function run(): Promise<void> {
           }
           continue;
         }
-        term.write(tok.raw);
+        const forwarded = translateMouseForChild(tok, childMouseEnabled);
+        if (forwarded) term.write(forwarded);
       } else {
         const ch = extractPrintableChar(tok.raw);
         if (ch) engine.typed(ch);

@@ -41,3 +41,17 @@ export function extractPrintableChar(raw: string): string | null {
   });
   return chars.length ? chars[chars.length - 1]! : null;
 }
+
+/**
+ * Translate an SGR mouse token directed at the upper child pane.
+ * If the child enabled mouse reporting, forward verbatim; otherwise turn scroll wheel into PageUp/PageDown.
+ */
+export function translateMouseForChild(
+  tok: Extract<InputToken, { kind: 'mouse' }>,
+  childMouseEnabled: boolean
+): string | null {
+  if (childMouseEnabled) return tok.raw;
+  if (!tok.release && tok.btn === 64) return '\x1b[5~';
+  if (!tok.release && tok.btn === 65) return '\x1b[6~';
+  return null;
+}
