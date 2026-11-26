@@ -13,6 +13,8 @@
 [![SSH Compatible](https://img.shields.io/badge/SSH-No%20tmux%20Required-5fd7af?style=for-the-badge)](#-quick-start)
 [![License MIT](https://img.shields.io/badge/License-MIT-ff5f87?style=for-the-badge)](./LICENSE)
 
+**English** · [简体中文](./README.zh-CN.md) · [日本語](./README.ja.md)
+
 [Showcase](#-visual-showcase) · [Features](#-highlights) · [Quick Start](#-quick-start) · [Protocols](#-terminal-graphics-support) · [Controls](#-controls--interactions) · [Architecture](#-architecture)
 
 </div>
