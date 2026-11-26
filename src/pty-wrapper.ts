@@ -10,8 +10,8 @@ const PREFERRED_PORT = Number(process.env.NEKOMI_PORT ?? 47821);
 const TARGET_CMD = process.env.NEKOMI_CMD ?? 'agy';
 const RAW_ARGV = process.argv.slice(2);
 const REQUESTED_GFX = parseGfxFlag(RAW_ARGV);
-const ENABLE_MOUSE = !RAW_ARGV.includes('--no-mouse') && process.env.NEKOMI_MOUSE !== '0';
-const TARGET_ARGS = RAW_ARGV.filter((arg) => !arg.startsWith('--gfx=') && arg !== '--no-mouse');
+const ENABLE_MOUSE = RAW_ARGV.includes('--mouse') || process.env.NEKOMI_MOUSE === '1';
+const TARGET_ARGS = RAW_ARGV.filter((arg) => !arg.startsWith('--gfx=') && arg !== '--mouse' && arg !== '--no-mouse');
 
 const engine = new NekomiEngine();
 let demoQueue: Array<{ kind: 'event' | 'activity'; value: string; until: number }> = [];
@@ -151,17 +151,17 @@ async function run(): Promise<void> {
     if (!force && key === lastBandKey) return;
     lastBandKey = key;
 
-    // Reset DECSTBM to full screen while painting the bottom 6 rows so Windows Terminal Sixel
-    // does not clip pixels below agyRows, then restore 1..agyRows before restoring cursor.
-    let out = `\x1b[?2026h\x1b7\x1b[r`;
+    // Disable auto-wrap and reset DECSTBM while painting the bottom 6 rows so writes never
+    // scroll the viewport and Sixel renders at the active cursor position (?80l).
+    let out = `\x1b[?2026h\x1b7\x1b[?7l\x1b[r`;
     for (let i = 0; i < lines.length; i++) {
-      out += `\x1b[${agyRows + 1 + i};1H\x1b[2K${lines[i]}`;
+      out += `\x1b[${agyRows + 1 + i};1H\x1b[2K${lines[i]!.trimEnd()}`;
     }
     if (spriteRenderer.protocol === 'sixel') {
-      out += '\x1b[?80h';
+      out += '\x1b[?80l';
     }
     out += spriteRenderer.renderOverlay(lastSnapshot, cols, agyRows + 1);
-    out += `\x1b[1;${agyRows}r\x1b8\x1b[?2026l`;
+    out += `\x1b[1;${agyRows}r\x1b[?7h\x1b8\x1b[?2026l`;
     process.stdout.write(out);
   };
 
@@ -272,7 +272,8 @@ async function run(): Promise<void> {
         // Ignore raw mode restore errors.
       }
     }
-    process.stdout.write(`${spriteRenderer.clearSequence()}\x1b[?1000l\x1b[?1006l\x1b[r\x1b[?25h\x1b[0m\n`);
+    const mouseOff = ENABLE_MOUSE ? '\x1b[?1000l\x1b[?1006l' : '';
+    process.stdout.write(`${spriteRenderer.clearSequence()}${mouseOff}\x1b[r\x1b[?25h\x1b[0m\n`);
     try {
       term.close();
     } catch {

@@ -28,6 +28,7 @@ Use this skill when the user asks how to launch, troubleshoot, or customize **ne
   - **Sixel** (`sixel`): Windows Terminal (1.22+), iTerm2, mintty, foot, mlterm
   - **24-bit Half-block** (`halfblock`): automatic fallback for plain text terminals
 - Override via `--gfx=kitty|sixel|halfblock` or `NEKOMI_GFX`.
+- **Native Scroll Wheel vs. Click-to-Poke**: PTY wrapper mode keeps native terminal mouse scrolling and text selection active by default. Pass `--mouse` (or set `NEKOMI_MOUSE=1`) to enable SGR click-to-poke on nekomi in the bottom band.
 
 ## Optional Auto-Launch Shell Function
 

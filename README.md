@@ -145,12 +145,15 @@ Selection order: `--gfx=<mode>` CLI flag → `NEKOMI_GFX` env var → `auto` det
 
 ### PTY Wrapper Mode (`nekomi` / `nekomi.cmd`)
 
+> [!TIP]
+> Native terminal **mouse wheel scrolling and text selection** stay enabled inside `agy` by default. Pass `--mouse` (or set `NEKOMI_MOUSE=1`) if you want to opt into SGR left/right click interactions on nekomi in the bottom band.
+
 | Input | Action |
 | :--- | :--- |
-| **Left Click on nekomi** | Triggers context-aware click reaction (`pet`, `spin`, `bonk`, `zap`, `peek`, `found`, `poof`, `shoo`, `wake`, `highfive`) |
-| **Right Click in Bottom Band** | Plays full animation + subagent kittens showcase |
+| **Native Scroll Wheel / Drag** | Scrolls `agy` scrollback and selects text natively (default) |
+| **Left Click on nekomi (`--mouse`)** | Triggers context-aware click reaction (`pet`, `spin`, `bonk`, `zap`, `peek`, `found`, `poof`, `shoo`, `wake`, `highfive`) |
+| **Right Click in Bottom Band (`--mouse`)** | Plays full animation + subagent kittens showcase |
 | **Typing in `agy` Prompt** | Real-time typing `echo` (paws tap fast + live key bubble; wakes sleeping nekomi) |
-| **Clicks / Scroll Above Band** | Forwarded transparently straight to `agy` |
 
 ### Standalone / `tmux` Pane Mode (`bun run demo` / `bun run tui`)
 
