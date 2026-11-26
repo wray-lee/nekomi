@@ -4,20 +4,22 @@ import { SpriteRenderer, parseGfxFlag } from './gfx-protocol';
 import { extractPrintableChar, parseTerminalInput, translateMouseForChild } from './input-parser';
 import { isBodyHit, renderBand } from './tui-render';
 import { BAND_ROWS } from './tui-sprite';
-import type { AgyHookPayload, EventKind, RenderSnapshot } from './types';
+import type { AgyHookPayload, RenderSnapshot } from './types';
 
 const PREFERRED_PORT = Number(process.env.NEKOMI_PORT ?? 47821);
 const TARGET_CMD = process.env.NEKOMI_CMD ?? 'agy';
 const RAW_ARGV = process.argv.slice(2);
 const REQUESTED_GFX = parseGfxFlag(RAW_ARGV);
-const ENABLE_MOUSE = RAW_ARGV.includes('--mouse') || process.env.NEKOMI_MOUSE === '1';
+let mouseEnabled = RAW_ARGV.includes('--mouse') || process.env.NEKOMI_MOUSE === '1';
 const TARGET_ARGS = RAW_ARGV.filter((arg) => !arg.startsWith('--gfx=') && arg !== '--mouse' && arg !== '--no-mouse');
 
 const engine = new NekomiEngine();
-let demoQueue: Array<{ kind: 'event' | 'activity'; value: string; until: number }> = [];
 let activeTranscriptPath = '';
 let transcriptOffset = 0;
-const KNOWN_SUBAGENTS = new Map<string, { id: string; role: string; depth: number; isWorkflow: boolean }>();
+let activeConversationId = '';
+let lsAddress = process.env.ANTIGRAVITY_LS_ADDRESS ?? '';
+let csrfToken = process.env.ANTIGRAVITY_CSRF_TOKEN ?? '';
+let isPollingSubagents = false;
 
 function syncTranscript(path?: string): void {
   if (!path || !existsSync(path)) return;
@@ -25,7 +27,6 @@ function syncTranscript(path?: string): void {
     if (path !== activeTranscriptPath) {
       activeTranscriptPath = path;
       transcriptOffset = 0;
-      KNOWN_SUBAGENTS.clear();
     }
     const size = statSync(path).size;
     if (size <= transcriptOffset) return;
@@ -44,65 +45,51 @@ function syncTranscript(path?: string): void {
       }
       const inTok = Number(entry.input_tokens ?? 0) + Number(entry.cache_read_tokens ?? 0);
       if (inTok > 0) engine.reportTokenCount(inTok);
-      const calls = Array.isArray(entry.tool_calls) ? entry.tool_calls : [];
-      for (const tc of calls) {
-        if (!tc || typeof tc !== 'object') continue;
-        const call = tc as { name?: string; args?: Record<string, unknown> };
-        if (call.name === 'invoke_subagent') {
-          const role = String(call.args?.Role ?? call.args?.TypeName ?? 'subagent');
-          const id = `sub:${role}:${KNOWN_SUBAGENTS.size}`;
-          KNOWN_SUBAGENTS.set(id, { id, role, depth: 1, isWorkflow: false });
-        } else if (call.name === 'manage_subagents' && call.args?.Action === 'kill_all') {
-          KNOWN_SUBAGENTS.clear();
-        }
-      }
-    }
-    if (KNOWN_SUBAGENTS.size > 0) {
-      engine.syncSubagents([...KNOWN_SUBAGENTS.values()]);
     }
   } catch {
     // Ignore transient transcript write locks.
   }
 }
 
-function applyDemoItem(item: { kind: 'event' | 'activity'; value: string }): void {
-  if (item.kind === 'event') {
-    engine.triggerEvent(item.value as EventKind);
-  } else {
-    engine.isWorking = true;
-    engine.runningTools = [{ id: 'demo', name: item.value, activity: item.value as never, startedAt: Date.now() }];
-    engine.recent = { activity: item.value as never, until: engine.scene.t + 18 };
+async function pollSubagents(): Promise<void> {
+  if (!activeConversationId || !lsAddress || !csrfToken || isPollingSubagents) return;
+  isPollingSubagents = true;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 600);
+  try {
+    const res = await fetch(`http://${lsAddress}/product.v1.ConversationService/ListConversations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Connect-Protocol-Version': '1',
+        'x-antigravity-csrf-token': csrfToken,
+      },
+      body: JSON.stringify({ parentConversationId: activeConversationId, pageSize: 20 }),
+      signal: controller.signal,
+    });
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      conversations?: Array<{
+        id?: string;
+        annotations?: { title?: string };
+        state?: { runState?: string; summary?: string };
+      }>;
+    };
+    const running = (data.conversations ?? [])
+      .filter((c) => c.id && c.state?.runState === 'RUN_STATE_RUNNING')
+      .map((c) => ({
+        id: c.id!,
+        role: c.annotations?.title || c.state?.summary || 'subagent',
+        depth: 1,
+        isWorkflow: false,
+      }));
+    engine.syncSubagents(running);
+  } catch {
+    // Ignore transient LS API errors or timeouts.
+  } finally {
+    clearTimeout(timer);
+    isPollingSubagents = false;
   }
-}
-
-function startDemoShowcase(): void {
-  const seq: Array<{ kind: 'event' | 'activity'; value: string; ticks: number }> = [
-    { kind: 'event', value: 'hello', ticks: 16 },
-    { kind: 'activity', value: 'think', ticks: 22 },
-    { kind: 'activity', value: 'shell', ticks: 18 },
-    { kind: 'activity', value: 'read', ticks: 18 },
-    { kind: 'activity', value: 'search', ticks: 18 },
-    { kind: 'activity', value: 'edit', ticks: 20 },
-    { kind: 'activity', value: 'skill', ticks: 20 },
-    { kind: 'activity', value: 'mcp', ticks: 18 },
-    { kind: 'activity', value: 'plan', ticks: 20 },
-    { kind: 'activity', value: 'todo', ticks: 18 },
-    { kind: 'activity', value: 'fetch', ticks: 18 },
-    { kind: 'activity', value: 'compact', ticks: 16 },
-    { kind: 'event', value: 'oops', ticks: 12 },
-    { kind: 'event', value: 'celebrate', ticks: 22 },
-  ];
-  engine.helpers.clear();
-  engine.addHelper('demo-1', { role: 'Research', depth: 1, isWorkflow: false });
-  engine.addHelper('demo-2', { role: 'Workflow', depth: 1, isWorkflow: true });
-  engine.addHelper('demo-3', { role: 'Sub-2', parent: 'demo-1', depth: 2, isWorkflow: false });
-
-  let cursor = engine.scene.t;
-  demoQueue = seq.map((s) => {
-    cursor += s.ticks;
-    return { kind: s.kind, value: s.value, until: cursor };
-  });
-  if (demoQueue[0]) applyDemoItem(demoQueue[0]);
 }
 
 function startHookServer() {
@@ -114,9 +101,17 @@ function startHookServer() {
     if (req.method === 'POST' && url.pathname === '/hook') {
       try {
         const payload = (await req.json()) as AgyHookPayload;
-        demoQueue = [];
+        if (payload.conversationId) activeConversationId = payload.conversationId;
+        if (payload._nekomi?.lsAddress) lsAddress = payload._nekomi.lsAddress;
+        if (payload._nekomi?.csrfToken) csrfToken = payload._nekomi.csrfToken;
         engine.handleHook(payload);
         if (payload.transcriptPath) syncTranscript(payload.transcriptPath);
+        if (
+          payload.hookEventName === 'PostToolUse' &&
+          (payload.toolCall?.name === 'invoke_subagent' || payload.toolCall?.name === 'manage_subagents')
+        ) {
+          void pollSubagents();
+        }
         return Response.json({ ok: true, action: engine.currentAction() });
       } catch (err) {
         return Response.json({ ok: false, error: String(err) }, { status: 400 });
@@ -174,8 +169,8 @@ async function run(): Promise<void> {
     }, 15);
   };
 
-  // Reserve bottom BAND_ROWS via DECSTBM, enable SGR mouse tracking unless disabled, and preload if needed.
-  const mouseInit = ENABLE_MOUSE ? '\x1b[?1000h\x1b[?1006h' : '';
+  // Reserve bottom BAND_ROWS via DECSTBM, enable SGR mouse tracking if enabled, and preload if needed.
+  const mouseInit = mouseEnabled ? '\x1b[?1000h\x1b[?1006h' : '';
   process.stdout.write(`\x1b[2J\x1b[1;${agyRows}r\x1b[1;1H${mouseInit}${spriteRenderer.initSequence()}`);
   paintBand(true);
 
@@ -218,15 +213,26 @@ async function run(): Promise<void> {
               engine.poke();
               paintBand(true);
             }
-          } else if (!tok.release && tok.btn === 2) {
-            startDemoShowcase();
-            paintBand(true);
           }
           continue;
         }
         const forwarded = translateMouseForChild(tok, childMouseEnabled);
         if (forwarded) term.write(forwarded);
       } else {
+        // Alt+P / Ctrl+] pokes nekomi anytime without disabling native scroll wheel.
+        if (tok.raw === '\x1bp' || tok.raw === '\x1bP' || tok.raw === '\x1d') {
+          engine.poke();
+          paintBand(true);
+          continue;
+        }
+        // Alt+M toggles SGR mouse-click mode live without restarting agy.
+        if (tok.raw === '\x1bm' || tok.raw === '\x1bM') {
+          mouseEnabled = !mouseEnabled;
+          process.stdout.write(mouseEnabled ? '\x1b[?1000h\x1b[?1006h' : '\x1b[?1000l\x1b[?1006l');
+          engine.poke();
+          paintBand(true);
+          continue;
+        }
         const ch = extractPrintableChar(tok.raw);
         if (ch) engine.typed(ch);
         term.write(tok.raw);
@@ -246,23 +252,17 @@ async function run(): Promise<void> {
   process.stdout.on('resize', onResize);
 
   const timer = setInterval(() => {
-    if (demoQueue.length > 0) {
-      const cur = demoQueue[0]!;
-      if (engine.scene.t >= cur.until) {
-        demoQueue.shift();
-        engine.runningTools = [];
-        engine.isWorking = false;
-        engine.recent = null;
-        if (demoQueue.length > 0) applyDemoItem(demoQueue[0]!);
-        else engine.helpers.clear();
-      }
-    }
     engine.tick(cols);
     paintBand(false);
   }, 100);
 
+  const subagentTimer = setInterval(() => {
+    void pollSubagents();
+  }, 1500);
+
   const cleanup = () => {
     clearInterval(timer);
+    clearInterval(subagentTimer);
     process.stdin.off('data', onStdin);
     process.stdout.off('resize', onResize);
     if (process.stdin.isTTY) {
@@ -272,7 +272,7 @@ async function run(): Promise<void> {
         // Ignore raw mode restore errors.
       }
     }
-    const mouseOff = ENABLE_MOUSE ? '\x1b[?1000l\x1b[?1006l' : '';
+    const mouseOff = mouseEnabled ? '\x1b[?1000l\x1b[?1006l' : '';
     process.stdout.write(`${spriteRenderer.clearSequence()}${mouseOff}\x1b[r\x1b[?25h\x1b[0m\n`);
     try {
       term.close();

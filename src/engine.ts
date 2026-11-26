@@ -226,7 +226,9 @@ export class NekomiEngine {
       // Hold the completed tool's animation for HOLD_TICKS even when PreToolUse isn't wired.
       if (name) {
         this.recent = { activity, until: this.scene.t + HOLD_TICKS };
-        this.spawnHelpersForTool(name, id, payload.toolCall?.args);
+        if (name === 'invoke_subagent' || name === 'swarm' || name === 'manage_subagents') {
+          this.spawnHelpersForTool(name, id, payload.toolCall?.args);
+        }
       }
       if (payload.error) {
         this.triggerEvent('oops');
@@ -241,7 +243,7 @@ export class NekomiEngine {
     if (ev === 'Stop') {
       this.isWorking = false;
       this.runningTools = [];
-      if (payload.fullyIdle) {
+      if (payload.fullyIdle !== false) {
         this.helpers.clear();
       }
       const reason = payload.terminationReason ?? 'NO_TOOL_CALL';
@@ -268,13 +270,17 @@ export class NekomiEngine {
       this.addHelper(`swarm:${sName}`, { role: sName, depth: 1, isWorkflow: true });
     } else if (name === 'manage_subagents' && args?.Action === 'kill_all') {
       this.helpers.clear();
+    } else if (name === 'manage_subagents' && args?.Action === 'kill' && Array.isArray(args?.ConversationIds)) {
+      for (const cid of args.ConversationIds) {
+        this.helpers.delete(String(cid));
+      }
     }
   }
 
   syncSubagents(active: Array<{ id: string; role?: string; parent?: string; depth?: number; isWorkflow?: boolean }>): void {
     const keep = new Set(active.map((a) => a.id));
     for (const id of [...this.helpers.keys()]) {
-      if (!keep.has(id) && !id.startsWith('wf:')) {
+      if (!keep.has(id)) {
         this.helpers.delete(id);
       }
     }
@@ -343,14 +349,17 @@ export class NekomiEngine {
     };
 
     const lined = lineUpHelpers([...this.helpers.values()]);
-    const toLeft = clampedX + SPRITE_W / 2 >= cols / 2;
-    let cursor = toLeft ? clampedX - FX_MARGIN : clampedX + SPRITE_W + FX_MARGIN;
+    // Trail behind nekomi based on her facing direction; only flip side when pinned near a screen edge.
+    let toLeft = pose.facing === 1;
+    if (toLeft && clampedX < 9) toLeft = false;
+    else if (!toLeft && clampedX + SPRITE_W > cols - 9) toLeft = true;
+    let cursor = toLeft ? clampedX - 1 : clampedX + SPRITE_W + 1;
     const helpersOut: RenderHelper[] = [];
     const hidden: Helper[] = [];
     let counted = 0;
 
     for (const [i, h] of lined.entries()) {
-      const w = h.depth > 2 ? 2 : h.depth > 1 ? 5 : 8;
+      const w = h.depth > 2 ? 2 : h.depth > 1 ? 4 : 6;
       const col = toLeft ? cursor - w : cursor;
       if (h.depth <= 2 && counted >= 8) {
         hidden.push(h);
@@ -371,7 +380,7 @@ export class NekomiEngine {
         blink: (this.scene.t + i * 7) % 53 < 2,
         x: col,
       });
-      cursor = toLeft ? col - 2 : col + w + 2;
+      cursor = toLeft ? col - 1 : col + w + 1;
     }
 
     return {

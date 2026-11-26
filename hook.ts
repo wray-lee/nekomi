@@ -20,6 +20,12 @@ async function main(): Promise<void> {
     }
   }
 
+  const lsAddress = process.env.ANTIGRAVITY_LS_ADDRESS;
+  const csrfToken = process.env.ANTIGRAVITY_CSRF_TOKEN;
+  if (lsAddress || csrfToken) {
+    payload._nekomi = { lsAddress, csrfToken };
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 150);
   try {

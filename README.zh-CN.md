@@ -146,14 +146,16 @@ agy() {
 ### PTY 伴侣模式（`nekomi` / `nekomi.cmd`）
 
 > [!TIP]
-> 为保留终端内对 `agy` 的**原生鼠标滚轮翻页与文字选中复制**，PTY 模式默认不劫持外层鼠标。如需开启底部猫娘的鼠标点击互动，启动时传入 `--mouse`（或设置 `NEKOMI_MOUSE=1`）即可。
+> 为保留终端内对 `agy` 的**原生鼠标滚轮翻页与文字选中复制**，PTY 模式默认不劫持外层鼠标。按 `Alt+P` / `Ctrl+]` 可在不影响滚轮的前提下随时逗猫；按 `Alt+M` 可随时在线开关鼠标点击模式（无需重启 `agy`），或启动时加 `--mouse` / `NEKOMI_MOUSE=1`。
 
 | 操作 | 响应效果 |
 | :--- | :--- |
 | **终端鼠标滚轮 / 拖选复制** | 原生滚动 `agy` 历史输出与划词复制（默认开启） |
-| **左键点击猫娘（`--mouse`）** | 按当前状态触发专属彩蛋反应（`pet`、`spin`、`bonk`、`zap`、`peek`、`found`、`poof`、`shoo`、`wake`、`highfive`） |
-| **右键点击底部 6 行区（`--mouse`）** | 触发完整动作 + 多只子代理小猫演示 |
+| **`Alt+P` 或 `Ctrl+]`** | 随时逗猫（保持原生滚轮正常可用） |
+| **`Alt+M`** | 实时开关 SGR 鼠标点击捕获（无需重启 `agy`） |
+| **左键点击猫娘（`Alt+M` / `--mouse`）** | 按当前状态触发专属彩蛋反应（`pet`、`spin`、`bonk`、`zap`、`peek`、`found`、`poof`、`shoo`、`wake`、`highfive`） |
 | **在 `agy` 中打字** | 实时触发敲爪动画 `echo` 并在身旁举起最后键入的字符（睡着时立即唤醒） |
+| **子代理小猫队列** | 通过 `ConversationService/ListConversations` 实时同步，仅在子代理真正 `RUN_STATE_RUNNING` 时出现 |
 
 ### 独立演示 / `tmux` Pane 模式（`bun run demo` / `bun run tui`）
 

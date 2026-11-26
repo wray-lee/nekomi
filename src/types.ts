@@ -183,4 +183,8 @@ export interface AgyHookPayload {
     name?: string;
     args?: Record<string, unknown>;
   };
+  _nekomi?: {
+    lsAddress?: string;
+    csrfToken?: string;
+  };
 }

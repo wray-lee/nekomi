@@ -146,14 +146,16 @@ Selection order: `--gfx=<mode>` CLI flag → `NEKOMI_GFX` env var → `auto` det
 ### PTY Wrapper Mode (`nekomi` / `nekomi.cmd`)
 
 > [!TIP]
-> Native terminal **mouse wheel scrolling and text selection** stay enabled inside `agy` by default. Pass `--mouse` (or set `NEKOMI_MOUSE=1`) if you want to opt into SGR left/right click interactions on nekomi in the bottom band.
+> Native terminal **mouse wheel scrolling and text selection** stay enabled inside `agy` by default. Use `Alt+P` / `Ctrl+]` to poke nekomi anytime without giving up your scroll wheel, or press `Alt+M` to live-toggle mouse click mode on/off (you can also pass `--mouse` or set `NEKOMI_MOUSE=1` at launch).
 
 | Input | Action |
 | :--- | :--- |
 | **Native Scroll Wheel / Drag** | Scrolls `agy` scrollback and selects text natively (default) |
-| **Left Click on nekomi (`--mouse`)** | Triggers context-aware click reaction (`pet`, `spin`, `bonk`, `zap`, `peek`, `found`, `poof`, `shoo`, `wake`, `highfive`) |
-| **Right Click in Bottom Band (`--mouse`)** | Plays full animation + subagent kittens showcase |
+| **`Alt+P` or `Ctrl+]`** | Pokes nekomi anytime with scroll wheel intact |
+| **`Alt+M`** | Live-toggles SGR mouse click capture on/off without restarting `agy` |
+| **Left Click on nekomi (`Alt+M` / `--mouse`)** | Triggers context-aware click reaction (`pet`, `spin`, `bonk`, `zap`, `peek`, `found`, `poof`, `shoo`, `wake`, `highfive`) |
 | **Typing in `agy` Prompt** | Real-time typing `echo` (paws tap fast + live key bubble; wakes sleeping nekomi) |
+| **Subagent Kittens** | Synced in real time against `ConversationService/ListConversations` (`RUN_STATE_RUNNING` only) |
 
 ### Standalone / `tmux` Pane Mode (`bun run demo` / `bun run tui`)
 

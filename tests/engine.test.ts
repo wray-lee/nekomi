@@ -143,4 +143,60 @@ describe('NekomiEngine & TUI full mechanics', () => {
     expect(extractPrintableChar('abc')).toBe('c');
     expect(extractPrintableChar('\x1b[A')).toBeNull();
   });
+
+  test('helpers never spawn for normal tools and clear cleanly on Stop or syncSubagents([])', () => {
+    const eng = new NekomiEngine();
+    for (const tool of ['read_file', 'run_command', 'edit_file', 'run_workflow']) {
+      eng.handleHook({ hookEventName: 'PostToolUse', toolCall: { id: `id_${tool}`, name: tool } });
+    }
+    expect(eng.helpers.size).toBe(0);
+
+    eng.handleHook({
+      hookEventName: 'PostToolUse',
+      toolCall: { id: 'sub1', name: 'invoke_subagent', args: { Role: 'Reviewer' } },
+    });
+    expect(eng.helpers.size).toBe(1);
+
+    // Stop with fullyIdle: false keeps running background helpers
+    eng.handleHook({ hookEventName: 'Stop', terminationReason: 'NO_TOOL_CALL', fullyIdle: false });
+    expect(eng.helpers.size).toBe(1);
+
+    // Stop when fullyIdle is omitted or true clears helpers
+    eng.handleHook({ hookEventName: 'Stop', terminationReason: 'NO_TOOL_CALL' });
+    expect(eng.helpers.size).toBe(0);
+
+    // syncSubagents([]) removes all helpers including wf:* entries
+    eng.addHelper('wf:job:0', { role: 'wf', depth: 1, isWorkflow: true });
+    eng.addHelper('sub:conv1', { role: 'agent', depth: 1, isWorkflow: false });
+    expect(eng.helpers.size).toBe(2);
+    eng.syncSubagents([]);
+    expect(eng.helpers.size).toBe(0);
+  });
+
+  test('helpers consistently trail behind nekomi facing direction across screen halves', () => {
+    const eng = new NekomiEngine(20);
+    eng.addHelper('h1', { role: 'sub', depth: 1, isWorkflow: false });
+
+    // Facing right on the left half -> kitten trails behind on the left (x < snap.x)
+    eng.scene = { ...eng.scene, x: 20, dir: 1 };
+    let snap = eng.snapshot(100);
+    expect(snap.pose.facing).toBe(1);
+    expect(snap.helpers[0]!.x).toBeLessThan(snap.x);
+
+    // Facing right on the right half -> still trails behind on the left (x < snap.x)
+    eng.scene = { ...eng.scene, x: 70, dir: 1 };
+    snap = eng.snapshot(100);
+    expect(snap.helpers[0]!.x).toBeLessThan(snap.x);
+
+    // Facing left on the right half -> kitten trails behind on the right (x > snap.x)
+    eng.scene = { ...eng.scene, x: 70, dir: -1 };
+    snap = eng.snapshot(100);
+    expect(snap.pose.facing).toBe(-1);
+    expect(snap.helpers[0]!.x).toBeGreaterThan(snap.x);
+
+    // Facing left on the left half -> still trails behind on the right (x > snap.x)
+    eng.scene = { ...eng.scene, x: 20, dir: -1 };
+    snap = eng.snapshot(100);
+    expect(snap.helpers[0]!.x).toBeGreaterThan(snap.x);
+  });
 });
