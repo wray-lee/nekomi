@@ -1,0 +1,270 @@
+{
+  "version": 6,
+  "masterSize": 256,
+  "pngSize": 128,
+  "sixelSize": 96,
+  "kittenPngSize": 72,
+  "kittenSixelSize": 48,
+  "poses": [
+    {
+      "pose": "idle_0",
+      "rightPng": "idle_0_r.png",
+      "leftPng": "idle_0_l.png",
+      "rightSixel": "idle_0_r.sixel",
+      "leftSixel": "idle_0_l.sixel"
+    },
+    {
+      "pose": "idle_1",
+      "rightPng": "idle_1_r.png",
+      "leftPng": "idle_1_l.png",
+      "rightSixel": "idle_1_r.sixel",
+      "leftSixel": "idle_1_l.sixel"
+    },
+    {
+      "pose": "walk_0",
+      "rightPng": "walk_0_r.png",
+      "leftPng": "walk_0_l.png",
+      "rightSixel": "walk_0_r.sixel",
+      "leftSixel": "walk_0_l.sixel"
+    },
+    {
+      "pose": "walk_1",
+      "rightPng": "walk_1_r.png",
+      "leftPng": "walk_1_l.png",
+      "rightSixel": "walk_1_r.sixel",
+      "leftSixel": "walk_1_l.sixel"
+    },
+    {
+      "pose": "code_0",
+      "rightPng": "code_0_r.png",
+      "leftPng": "code_0_l.png",
+      "rightSixel": "code_0_r.sixel",
+      "leftSixel": "code_0_l.sixel"
+    },
+    {
+      "pose": "code_1",
+      "rightPng": "code_1_r.png",
+      "leftPng": "code_1_l.png",
+      "rightSixel": "code_1_r.sixel",
+      "leftSixel": "code_1_l.sixel"
+    },
+    {
+      "pose": "term_0",
+      "rightPng": "term_0_r.png",
+      "leftPng": "term_0_l.png",
+      "rightSixel": "term_0_r.sixel",
+      "leftSixel": "term_0_l.sixel"
+    },
+    {
+      "pose": "term_1",
+      "rightPng": "term_1_r.png",
+      "leftPng": "term_1_l.png",
+      "rightSixel": "term_1_r.sixel",
+      "leftSixel": "term_1_l.sixel"
+    },
+    {
+      "pose": "read_0",
+      "rightPng": "read_0_r.png",
+      "leftPng": "read_0_l.png",
+      "rightSixel": "read_0_r.sixel",
+      "leftSixel": "read_0_l.sixel"
+    },
+    {
+      "pose": "read_1",
+      "rightPng": "read_1_r.png",
+      "leftPng": "read_1_l.png",
+      "rightSixel": "read_1_r.sixel",
+      "leftSixel": "read_1_l.sixel"
+    },
+    {
+      "pose": "happy_0",
+      "rightPng": "happy_0_r.png",
+      "leftPng": "happy_0_l.png",
+      "rightSixel": "happy_0_r.sixel",
+      "leftSixel": "happy_0_l.sixel"
+    },
+    {
+      "pose": "happy_1",
+      "rightPng": "happy_1_r.png",
+      "leftPng": "happy_1_l.png",
+      "rightSixel": "happy_1_r.sixel",
+      "leftSixel": "happy_1_l.sixel"
+    },
+    {
+      "pose": "sleep_0",
+      "rightPng": "sleep_0_r.png",
+      "leftPng": "sleep_0_l.png",
+      "rightSixel": "sleep_0_r.sixel",
+      "leftSixel": "sleep_0_l.sixel"
+    },
+    {
+      "pose": "sleep_1",
+      "rightPng": "sleep_1_r.png",
+      "leftPng": "sleep_1_l.png",
+      "rightSixel": "sleep_1_r.sixel",
+      "leftSixel": "sleep_1_l.sixel"
+    },
+    {
+      "pose": "oops_0",
+      "rightPng": "oops_0_r.png",
+      "leftPng": "oops_0_l.png",
+      "rightSixel": "oops_0_r.sixel",
+      "leftSixel": "oops_0_l.sixel"
+    },
+    {
+      "pose": "oops_1",
+      "rightPng": "oops_1_r.png",
+      "leftPng": "oops_1_l.png",
+      "rightSixel": "oops_1_r.sixel",
+      "leftSixel": "oops_1_l.sixel"
+    },
+    {
+      "pose": "type_0",
+      "rightPng": "type_0_r.png",
+      "leftPng": "type_0_l.png",
+      "rightSixel": "type_0_r.sixel",
+      "leftSixel": "type_0_l.sixel"
+    },
+    {
+      "pose": "type_1",
+      "rightPng": "type_1_r.png",
+      "leftPng": "type_1_l.png",
+      "rightSixel": "type_1_r.sixel",
+      "leftSixel": "type_1_l.sixel"
+    }
+  ],
+  "kittens": [
+    {
+      "color": "#ff5f87",
+      "plainOpenPng": "kittens/kitten_00_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_00_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_00_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_00_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_00_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_00_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_00_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_00_wf_blink.sixel"
+    },
+    {
+      "color": "#ffd75f",
+      "plainOpenPng": "kittens/kitten_01_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_01_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_01_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_01_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_01_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_01_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_01_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_01_wf_blink.sixel"
+    },
+    {
+      "color": "#87d75f",
+      "plainOpenPng": "kittens/kitten_02_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_02_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_02_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_02_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_02_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_02_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_02_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_02_wf_blink.sixel"
+    },
+    {
+      "color": "#5fd7af",
+      "plainOpenPng": "kittens/kitten_03_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_03_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_03_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_03_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_03_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_03_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_03_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_03_wf_blink.sixel"
+    },
+    {
+      "color": "#5fd7ff",
+      "plainOpenPng": "kittens/kitten_04_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_04_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_04_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_04_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_04_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_04_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_04_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_04_wf_blink.sixel"
+    },
+    {
+      "color": "#ff9e64",
+      "plainOpenPng": "kittens/kitten_05_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_05_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_05_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_05_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_05_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_05_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_05_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_05_wf_blink.sixel"
+    },
+    {
+      "color": "#ff87d7",
+      "plainOpenPng": "kittens/kitten_06_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_06_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_06_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_06_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_06_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_06_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_06_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_06_wf_blink.sixel"
+    },
+    {
+      "color": "#d7ff87",
+      "plainOpenPng": "kittens/kitten_07_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_07_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_07_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_07_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_07_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_07_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_07_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_07_wf_blink.sixel"
+    },
+    {
+      "color": "#73daca",
+      "plainOpenPng": "kittens/kitten_08_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_08_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_08_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_08_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_08_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_08_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_08_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_08_wf_blink.sixel"
+    },
+    {
+      "color": "#f7768e",
+      "plainOpenPng": "kittens/kitten_09_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_09_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_09_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_09_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_09_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_09_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_09_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_09_wf_blink.sixel"
+    },
+    {
+      "color": "#ffffaf",
+      "plainOpenPng": "kittens/kitten_10_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_10_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_10_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_10_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_10_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_10_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_10_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_10_wf_blink.sixel"
+    },
+    {
+      "color": "#4ec9b0",
+      "plainOpenPng": "kittens/kitten_11_plain_open.png",
+      "plainOpenSixel": "kittens/kitten_11_plain_open.sixel",
+      "plainBlinkPng": "kittens/kitten_11_plain_blink.png",
+      "plainBlinkSixel": "kittens/kitten_11_plain_blink.sixel",
+      "wfOpenPng": "kittens/kitten_11_wf_open.png",
+      "wfOpenSixel": "kittens/kitten_11_wf_open.sixel",
+      "wfBlinkPng": "kittens/kitten_11_wf_blink.png",
+      "wfBlinkSixel": "kittens/kitten_11_wf_blink.sixel"
+    }
+  ]
+}

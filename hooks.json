@@ -1,0 +1,45 @@
+{
+  "nekomi": {
+    "enabled": true,
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "bun ./hook.ts",
+        "timeout": 5
+      }
+    ],
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "bun ./hook.ts",
+        "timeout": 5
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ./hook.ts",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostInvocation": [
+      {
+        "type": "command",
+        "command": "bun ./hook.ts",
+        "timeout": 5
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "bun ./hook.ts",
+        "timeout": 5
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "nekomi",
+  "version": "1.0.0",
+  "description": "Terminal-native catgirl companion plugin for Google Antigravity CLI (agy) with Kitty/Sixel image protocols, SGR mouse interactions, live typing echo, and 12-color subagent kittens.",
+  "logo": "assets/sprites/idle_0_r.png",
+  "author": {
+    "name": "wray-lee",
+    "url": "https://github.com/wray-lee"
+  },
+  "homepage": "https://github.com/wray-lee/nekomi",
+  "repository": "https://github.com/wray-lee/nekomi"
+}
