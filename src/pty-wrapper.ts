@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { NekomiEngine } from './engine';
-import { SpriteRenderer, parseGfxFlag } from './gfx-protocol';
+import { SpriteRenderer, parseGfxFlag, probeGfxProtocol } from './gfx-protocol';
 import { extractPrintableChar, parseTerminalInput, translateMouseForChild } from './input-parser';
 import { isBodyHit, renderBand } from './tui-render';
 import { BAND_ROWS } from './tui-sprite';
@@ -129,7 +129,8 @@ function startHookServer() {
 
 async function run(): Promise<void> {
   const server = startHookServer();
-  const spriteRenderer = new SpriteRenderer(REQUESTED_GFX);
+  const resolvedGfx = await probeGfxProtocol(REQUESTED_GFX);
+  const spriteRenderer = new SpriteRenderer(resolvedGfx);
   let cols = process.stdout.columns || 100;
   let rows = process.stdout.rows || 30;
   let agyRows = Math.max(6, rows - BAND_ROWS);

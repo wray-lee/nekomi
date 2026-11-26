@@ -11,6 +11,7 @@ import {
   encodeKittyUpload,
   encodeRgbaToSixel,
   parseGfxFlag,
+  parseTerminalGfxProbe,
   selectSpritePose,
 } from '../src/gfx-protocol';
 import { translateMouseForChild } from '../src/input-parser';
@@ -161,5 +162,12 @@ describe('Terminal image protocol & 48x48 integrated catgirl sprites', () => {
 
     expect(translateMouseForChild(wheelUp, true)).toBe(wheelUp.raw);
     expect(translateMouseForChild(leftClick, true)).toBe(leftClick.raw);
+  });
+
+  test('parseTerminalGfxProbe detects Kitty OK and Sixel DA1 over SSH and waits for DA1', () => {
+    expect(parseTerminalGfxProbe('\x1b_Gi=31;OK\x1b\\\x1b[?62;4c')).toEqual({ done: true, protocol: 'kitty' });
+    expect(parseTerminalGfxProbe('\x1b[?65;1;4;6;22c')).toEqual({ done: true, protocol: 'sixel' });
+    expect(parseTerminalGfxProbe('\x1b[?62;1;2;22c')).toEqual({ done: true, protocol: 'halfblock' });
+    expect(parseTerminalGfxProbe('\x1b_Gi=31;OK\x1b\\')).toEqual({ done: false, protocol: 'kitty' });
   });
 });

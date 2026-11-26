@@ -145,6 +145,72 @@ export function detectGfxProtocol(
   return 'halfblock';
 }
 
+/** Parse a combined Kitty graphics query + VT DA1 terminal probe response. */
+export function parseTerminalGfxProbe(reply: string): { done: boolean; protocol: GfxProtocol | null } {
+  const hasKitty = /\x1b_Gi=31;OK/.test(reply);
+  const da1 = reply.match(/\x1b\[\?([0-9;]+)c/);
+  if (da1) {
+    const params = da1[1]!.split(';');
+    return { done: true, protocol: hasKitty ? 'kitty' : params.includes('4') ? 'sixel' : 'halfblock' };
+  }
+  return { done: false, protocol: hasKitty ? 'kitty' : null };
+}
+
+/**
+ * Actively query Kitty graphics + VT DA1 over TTY when env vars do not identify the terminal
+ * (e.g., over SSH where WT_SESSION / KITTY_WINDOW_ID / TERM_PROGRAM are not forwarded).
+ */
+export async function probeGfxProtocol(
+  requested: 'auto' | GfxProtocol = 'auto',
+  env: Record<string, string | undefined> = process.env,
+  timeoutMs = 180
+): Promise<GfxProtocol> {
+  const envDetected = detectGfxProtocol(env, requested);
+  if (requested !== 'auto' || envDetected !== 'halfblock') return envDetected;
+  if (!process.stdin.isTTY || !process.stdout.isTTY) return 'halfblock';
+
+  const wasRaw = (process.stdin as { isRaw?: boolean }).isRaw ?? false;
+  return await new Promise<GfxProtocol>((resolve) => {
+    let buffer = '';
+    let settled = false;
+
+    const finish = (proto: GfxProtocol) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      process.stdin.off('data', onData);
+      try {
+        process.stdin.setRawMode(wasRaw);
+      } catch {
+        // Ignore raw mode restore errors.
+      }
+      resolve(proto);
+    };
+
+    const onData = (buf: Buffer) => {
+      buffer += buf.toString('utf8');
+      const parsed = parseTerminalGfxProbe(buffer);
+      if (parsed.done) {
+        finish(parsed.protocol ?? 'halfblock');
+      }
+    };
+
+    const timer = setTimeout(() => {
+      const parsed = parseTerminalGfxProbe(buffer);
+      finish(parsed.protocol ?? 'halfblock');
+    }, timeoutMs);
+
+    try {
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
+      process.stdin.on('data', onData);
+      process.stdout.write('\x1b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\\x1b[c');
+    } catch {
+      finish('halfblock');
+    }
+  });
+}
+
 /** Map current engine snapshot to one of the 18 animated catgirl frames + facing direction. */
 export function selectSpritePose(snapshot: RenderSnapshot): { pose: SpritePoseKey; facing: 'r' | 'l' } {
   const facing: 'r' | 'l' = snapshot.pose.facing === -1 ? 'l' : 'r';

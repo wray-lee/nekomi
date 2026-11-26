@@ -1,5 +1,5 @@
 import { NekomiEngine } from './engine';
-import { type GfxProtocol, SpriteRenderer, parseGfxFlag } from './gfx-protocol';
+import { type GfxProtocol, SpriteRenderer, parseGfxFlag, probeGfxProtocol } from './gfx-protocol';
 import { parseTerminalInput } from './input-parser';
 import { isBodyHit, renderBand } from './tui-render';
 import { BAND_ROWS } from './tui-sprite';
@@ -8,7 +8,8 @@ import type { AgyHookPayload, EventKind, RenderSnapshot } from './types';
 const PORT = Number(process.env.NEKOMI_PORT ?? 47821);
 const DEMO_MODE = process.argv.includes('--demo');
 const GFX_CYCLE: GfxProtocol[] = ['kitty', 'sixel', 'halfblock'];
-let spriteRenderer = new SpriteRenderer(parseGfxFlag(process.argv.slice(2)));
+const resolvedGfx = await probeGfxProtocol(parseGfxFlag(process.argv.slice(2)));
+let spriteRenderer = new SpriteRenderer(resolvedGfx);
 
 const engine = new NekomiEngine();
 let demoQueue: Array<{ kind: 'event' | 'activity'; value: string; until: number }> = [];
