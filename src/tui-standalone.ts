@@ -8,7 +8,12 @@ import type { AgyHookPayload, EventKind, RenderSnapshot } from './types';
 const PORT = Number(process.env.NEKOMI_PORT ?? 47821);
 const DEMO_MODE = process.argv.includes('--demo');
 const GFX_CYCLE: GfxProtocol[] = ['kitty', 'sixel', 'halfblock'];
-const resolvedGfx = await probeGfxProtocol(parseGfxFlag(process.argv.slice(2)));
+let pendingInput = '';
+const resolvedGfx = await probeGfxProtocol(parseGfxFlag(process.argv.slice(2)), process.env, 400, {
+  onPendingInput: (text) => {
+    pendingInput += text;
+  },
+});
 let spriteRenderer = new SpriteRenderer(resolvedGfx);
 
 const engine = new NekomiEngine();
@@ -120,7 +125,7 @@ const cleanup = () => {
   process.exit(0);
 };
 
-process.stdin.on('data', (buf: Buffer) => {
+const onStdin = (buf: Buffer) => {
   const chunk = buf.toString('utf8');
   for (const tok of parseTerminalInput(chunk)) {
     if (tok.kind === 'mouse') {
@@ -164,7 +169,9 @@ process.stdin.on('data', (buf: Buffer) => {
       }
     }
   }
-});
+};
+
+process.stdin.on('data', onStdin);
 
 process.stdout.on('resize', () => {
   cols = process.stdout.columns || 80;
@@ -187,6 +194,10 @@ const timer = setInterval(() => {
   engine.tick(cols);
   draw(false);
 }, 100);
+
+if (pendingInput.length > 0) {
+  onStdin(Buffer.from(pendingInput, 'utf8'));
+}
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);

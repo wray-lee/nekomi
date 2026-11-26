@@ -145,15 +145,46 @@ export function detectGfxProtocol(
   return 'halfblock';
 }
 
+/** Kitty Graphics Query + VT DA1 query sent together so DA1 terminates the probe. */
+export const TERMINAL_GFX_QUERY = '\x1b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\\x1b[c';
+
+const KITTY_PROBE_RE = /\x1b_Gi=31;[^\x1b\x07]*(?:\x1b\\|\x07)/g;
+const DA1_PROBE_RE = /\x1b\[\?([0-9;]*)c/g;
+
+export interface ProbeStreams {
+  stdin: {
+    isTTY?: boolean;
+    isRaw?: boolean;
+    setRawMode?: (mode: boolean) => void;
+    resume: () => void;
+    on: (event: 'data', listener: (chunk: Buffer | string) => void) => void;
+    off: (event: 'data', listener: (chunk: Buffer | string) => void) => void;
+  };
+  stdout: {
+    isTTY?: boolean;
+    write: (data: string) => unknown;
+  };
+}
+
+export interface ProbeGfxOptions {
+  streams?: ProbeStreams;
+  onPendingInput?: (text: string) => void;
+}
+
 /** Parse a combined Kitty graphics query + VT DA1 terminal probe response. */
 export function parseTerminalGfxProbe(reply: string): { done: boolean; protocol: GfxProtocol | null } {
-  const hasKitty = /\x1b_Gi=31;OK/.test(reply);
-  const da1 = reply.match(/\x1b\[\?([0-9;]+)c/);
+  const hasKitty = /\x1b_Gi=31;OK(?:\x1b\\|\x07)/.test(reply);
+  const da1 = reply.match(/\x1b\[\?([0-9;]*)c/);
   if (da1) {
-    const params = da1[1]!.split(';');
+    const params = da1[1]!.split(';').filter(Boolean);
     return { done: true, protocol: hasKitty ? 'kitty' : params.includes('4') ? 'sixel' : 'halfblock' };
   }
   return { done: false, protocol: hasKitty ? 'kitty' : null };
+}
+
+/** Remove Kitty query and DA1 probe responses so concurrent user keystrokes are preserved. */
+export function stripTerminalGfxProbe(reply: string): string {
+  return reply.replace(KITTY_PROBE_RE, '').replace(DA1_PROBE_RE, '');
 }
 
 /**
@@ -163,13 +194,18 @@ export function parseTerminalGfxProbe(reply: string): { done: boolean; protocol:
 export async function probeGfxProtocol(
   requested: 'auto' | GfxProtocol = 'auto',
   env: Record<string, string | undefined> = process.env,
-  timeoutMs = 180
+  timeoutMs = 400,
+  options: ProbeGfxOptions = {}
 ): Promise<GfxProtocol> {
   const envDetected = detectGfxProtocol(env, requested);
   if (requested !== 'auto' || envDetected !== 'halfblock') return envDetected;
-  if (!process.stdin.isTTY || !process.stdout.isTTY) return 'halfblock';
 
-  const wasRaw = (process.stdin as { isRaw?: boolean }).isRaw ?? false;
+  const streams = options.streams ?? { stdin: process.stdin, stdout: process.stdout };
+  if (!streams.stdin.isTTY || !streams.stdout.isTTY || (env.TERM ?? '').toLowerCase() === 'dumb') {
+    return 'halfblock';
+  }
+
+  const wasRaw = Boolean(streams.stdin.isRaw);
   return await new Promise<GfxProtocol>((resolve) => {
     let buffer = '';
     let settled = false;
@@ -178,17 +214,23 @@ export async function probeGfxProtocol(
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      process.stdin.off('data', onData);
-      try {
-        process.stdin.setRawMode(wasRaw);
-      } catch {
-        // Ignore raw mode restore errors.
+      streams.stdin.off('data', onData);
+      if (!wasRaw) {
+        try {
+          streams.stdin.setRawMode?.(false);
+        } catch {
+          // Ignore raw mode restore errors.
+        }
+      }
+      const remainder = stripTerminalGfxProbe(buffer);
+      if (remainder) {
+        options.onPendingInput?.(remainder);
       }
       resolve(proto);
     };
 
-    const onData = (buf: Buffer) => {
-      buffer += buf.toString('utf8');
+    const onData = (buf: Buffer | string) => {
+      buffer += typeof buf === 'string' ? buf : buf.toString('utf8');
       const parsed = parseTerminalGfxProbe(buffer);
       if (parsed.done) {
         finish(parsed.protocol ?? 'halfblock');
@@ -201,10 +243,10 @@ export async function probeGfxProtocol(
     }, timeoutMs);
 
     try {
-      process.stdin.setRawMode(true);
-      process.stdin.resume();
-      process.stdin.on('data', onData);
-      process.stdout.write('\x1b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\\x1b[c');
+      if (!wasRaw) streams.stdin.setRawMode?.(true);
+      streams.stdin.resume();
+      streams.stdin.on('data', onData);
+      streams.stdout.write(TERMINAL_GFX_QUERY);
     } catch {
       finish('halfblock');
     }

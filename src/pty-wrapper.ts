@@ -128,8 +128,13 @@ function startHookServer() {
 }
 
 async function run(): Promise<void> {
+  let pendingInput = '';
   const server = startHookServer();
-  const resolvedGfx = await probeGfxProtocol(REQUESTED_GFX);
+  const resolvedGfx = await probeGfxProtocol(REQUESTED_GFX, process.env, 400, {
+    onPendingInput: (text) => {
+      pendingInput += text;
+    },
+  });
   const spriteRenderer = new SpriteRenderer(resolvedGfx);
   let cols = process.stdout.columns || 100;
   let rows = process.stdout.rows || 30;
@@ -241,6 +246,9 @@ async function run(): Promise<void> {
     }
   };
   process.stdin.on('data', onStdin);
+  if (pendingInput.length > 0) {
+    onStdin(Buffer.from(pendingInput, 'utf8'));
+  }
 
   const onResize = () => {
     cols = process.stdout.columns || 100;

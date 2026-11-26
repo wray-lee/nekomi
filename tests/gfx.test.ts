@@ -1,9 +1,11 @@
+import { EventEmitter } from 'node:events';
 import { describe, expect, test } from 'bun:test';
 import { join } from 'node:path';
 import { NekomiEngine } from '../src/engine';
 import {
   SPRITE_IMG_COLS,
   SpriteRenderer,
+  TERMINAL_GFX_QUERY,
   detectGfxProtocol,
   encodeKittyDeleteAll,
   encodeKittyDeletePlacement,
@@ -12,7 +14,9 @@ import {
   encodeRgbaToSixel,
   parseGfxFlag,
   parseTerminalGfxProbe,
+  probeGfxProtocol,
   selectSpritePose,
+  stripTerminalGfxProbe,
 } from '../src/gfx-protocol';
 import { translateMouseForChild } from '../src/input-parser';
 import { renderBand } from '../src/tui-render';
@@ -169,5 +173,55 @@ describe('Terminal image protocol & 48x48 integrated catgirl sprites', () => {
     expect(parseTerminalGfxProbe('\x1b[?65;1;4;6;22c')).toEqual({ done: true, protocol: 'sixel' });
     expect(parseTerminalGfxProbe('\x1b[?62;1;2;22c')).toEqual({ done: true, protocol: 'halfblock' });
     expect(parseTerminalGfxProbe('\x1b_Gi=31;OK\x1b\\')).toEqual({ done: false, protocol: 'kitty' });
+    expect(stripTerminalGfxProbe('ab\x1b_Gi=31;OK\x1b\\\x1b[?62;4c')).toBe('ab');
+  });
+
+  test('probeGfxProtocol skips query on env hit and handles SSH Kitty, Sixel, timeout, and keystroke preservation', async () => {
+    const makeStreams = (replyChunks: string[], delayMs = 2) => {
+      const stdin = Object.assign(new EventEmitter(), {
+        isTTY: true,
+        isRaw: false,
+        rawHistory: [] as boolean[],
+        setRawMode(mode: boolean) {
+          this.rawHistory.push(mode);
+          this.isRaw = mode;
+        },
+        resume() {},
+      });
+      const written: string[] = [];
+      const stdout = {
+        isTTY: true,
+        write(data: string) {
+          written.push(data);
+          for (let i = 0; i < replyChunks.length; i++) {
+            setTimeout(() => stdin.emit('data', Buffer.from(replyChunks[i]!, 'utf8')), delayMs * (i + 1));
+          }
+        },
+      };
+      return { stdin, stdout, written };
+    };
+
+    const envStreams = makeStreams([]);
+    expect(await probeGfxProtocol('auto', { WT_SESSION: '1' }, 50, { streams: envStreams })).toBe('sixel');
+    expect(envStreams.written).toEqual([]);
+
+    const wtStreams = makeStreams(['\x1b[?61;6;', '7;4c']);
+    expect(await probeGfxProtocol('auto', { TERM: 'xterm-256color' }, 100, { streams: wtStreams })).toBe('sixel');
+    expect(wtStreams.written).toEqual([TERMINAL_GFX_QUERY]);
+    expect(wtStreams.stdin.rawHistory).toEqual([true, false]);
+
+    let pending = '';
+    const kittyStreams = makeStreams(['\x1b_Gi=31;OK\x1b\\', 'k\x1b[?62;4c']);
+    const kittyProto = await probeGfxProtocol('auto', { TERM: 'xterm-256color' }, 100, {
+      streams: kittyStreams,
+      onPendingInput: (t) => {
+        pending += t;
+      },
+    });
+    expect(kittyProto).toBe('kitty');
+    expect(pending).toBe('k');
+
+    const silentStreams = makeStreams([]);
+    expect(await probeGfxProtocol('auto', { TERM: 'xterm-256color' }, 20, { streams: silentStreams })).toBe('halfblock');
   });
 });
