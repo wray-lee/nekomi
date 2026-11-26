@@ -187,7 +187,7 @@ export function selectSpritePose(snapshot: RenderSnapshot): { pose: SpritePoseKe
   if (action === 'read' || action === 'search' || action === 'plan' || action === 'todo') {
     return { pose: Math.floor(t / 4) % 2 === 0 ? 'read_0' : 'read_1', facing };
   }
-  if (action === 'walk' || pose.legMode === 'stepA' || pose.legMode === 'stepB') {
+  if (action === 'walk') {
     const isStepB = pose.legMode === 'stepB' || (pose.legMode !== 'stepA' && Math.floor(t / 3) % 2 === 1);
     return { pose: isStepB ? 'walk_1' : 'walk_0', facing };
   }

@@ -1,6 +1,6 @@
 {
   "name": "nekomi",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Terminal-native catgirl companion plugin for Google Antigravity CLI (agy) with Kitty/Sixel image protocols, SGR mouse interactions, live typing echo, and 12-color subagent kittens.",
   "private": false,
   "type": "module",

@@ -13,6 +13,8 @@ OUT_DIR = ROOT / "assets" / "sprites"
 SHEET_1 = Path(r"C:\Users\Wray\.gemini\antigravity-cli\brain\87bab6bf-f444-4be8-96c3-3f1490f1a99f\nekomi_proto_raw_v2_1795683409282.jpg")
 SHEET_2 = Path(r"C:\Users\Wray\.gemini\antigravity-cli\brain\87bab6bf-f444-4be8-96c3-3f1490f1a99f\nekomi_sheet2_final_1795683971116.jpg")
 SHEET_3 = Path(r"C:\Users\Wray\.gemini\antigravity-cli\brain\87bab6bf-f444-4be8-96c3-3f1490f1a99f\nekomi_sheet3_raw_1795683907843.jpg")
+SHEET_WALK_V1 = Path(r"C:\Users\Wray\.gemini\antigravity-cli\brain\87bab6bf-f444-4be8-96c3-3f1490f1a99f\nekomi_walk_sheet_1795684426099.jpg")
+SHEET_WALK_V2 = Path(r"C:\Users\Wray\.gemini\antigravity-cli\brain\87bab6bf-f444-4be8-96c3-3f1490f1a99f\nekomi_walk_sheet_v2_1795684454565.jpg")
 
 FRAMES = [
     "idle_0", "idle_1",
@@ -317,6 +319,16 @@ def extract_sheet_quads(path: Path) -> dict[str, Image.Image]:
     return {k: key_and_clean(q, bg) for k, q in quads.items()}
 
 
+def extract_horizontal_halves(path: Path) -> tuple[Image.Image, Image.Image]:
+    raw = Image.open(path).convert("RGB")
+    w, h = raw.size
+    bg = sample_corner_bg(raw)
+    sx, _ = find_split_axes(raw, bg)
+    left = key_and_clean(raw.crop((0, 0, sx, h)), bg)
+    right = key_and_clean(raw.crop((sx, 0, w, h)), bg)
+    return left, right
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     existing_manifest_path = OUT_DIR / "manifest.json"
@@ -327,13 +339,21 @@ def main() -> None:
     s1 = extract_sheet_quads(SHEET_1)
     s2 = extract_sheet_quads(SHEET_2)
     s3 = extract_sheet_quads(SHEET_3)
+    walk_v2_l, walk_v2_r = extract_horizontal_halves(SHEET_WALK_V2)
+    _, walk_v1_r = extract_horizontal_halves(SHEET_WALK_V1)
 
     # Fit standing poses first to establish uniform character proportions across all sheets
     idle_0, idle_scale = fit_to_master(s1["tl"])
     idle_1 = stretch_feet_anchored(idle_0, 1.015, 0.975)
 
-    walk_0, _ = fit_to_master(s2["tl"], preferred_scale=idle_scale * 1.04)
-    walk_1, _ = fit_to_master(s2["tr"], preferred_scale=idle_scale * 1.04, dy_shift=-3)
+    # True right-facing side-profile walk cycle: walk_0 (v2 stride A) + walk_1 (v1 alternating leg stride + v2 heterochromia head)
+    walk_0, _ = fit_to_master(walk_v2_l, preferred_scale=idle_scale * 1.04)
+    walk_1_body, _ = fit_to_master(walk_v1_r, preferred_scale=idle_scale * 1.04, dy_shift=-2)
+    walk_v2_head, _ = fit_to_master(walk_v2_r, preferred_scale=idle_scale * 1.04, dy_shift=-2)
+    walk_1 = walk_1_body.copy()
+    # Replace upper head/eyes region cleanly (above neck/collar y=144) so heterochromia eyes match walk_0 identically
+    head_band = walk_v2_head.crop((0, 0, 256, 144))
+    walk_1.paste(head_band, (0, 0), head_band)
 
     code_0, _ = fit_to_master(s1["bl"], preferred_scale=idle_scale * 1.04)
     code_1 = stretch_feet_anchored(code_0, 1.0, 1.0, dy=-3)
